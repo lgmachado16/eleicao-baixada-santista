@@ -80,11 +80,39 @@ label.opcao {
 
 .faixa span { flex: 1; }
 
+.faixa.lista {
+  height: auto;
+  display: block;
+  border: 0;
+}
+
+.classe {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 3px 0;
+  font-size: 0.75rem;
+}
+
+.classe i {
+  width: 18px;
+  height: 12px;
+  border: 1px solid var(--linha);
+  flex: 0 0 auto;
+}
+
 .marcas {
   display: flex;
   justify-content: space-between;
+  position: relative;
   font-size: 0.75rem;
   margin-top: 4px;
+  min-height: 1.1em;
+}
+
+.marcas .zero {
+  position: absolute;
+  transform: translateX(-50%);
 }
 
 .nota, .rodape {
