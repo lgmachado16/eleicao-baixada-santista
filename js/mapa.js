@@ -1,16 +1,17 @@
 const OPACIDADE = 0.4;
 const CLASSES_NATURAIS = 5;
+const CLASSES_PRINCIPAIS = 6;
 
 const CAMADAS = [
-  { grupo: "Eleição 2026", id: "lula26", rotulo: "Lula", campo: "pct_lula_2026", tipo: "jenks" },
-  { grupo: "Eleição 2026", id: "flavio26", rotulo: "Flávio Bolsonaro", campo: "pct_flavio_2026", tipo: "jenks" },
+  { grupo: "Eleição 2026", id: "lula26", rotulo: "Lula", campo: "pct_lula_2026", tipo: "jenks", escala: "principais" },
+  { grupo: "Eleição 2026", id: "flavio26", rotulo: "Flávio Bolsonaro", campo: "pct_flavio_2026", tipo: "jenks", escala: "principais" },
   { grupo: "Eleição 2026", id: "cury26", rotulo: "Augusto Cury", campo: "pct_cury_2026", tipo: "jenks" },
   { grupo: "Eleição 2026", id: "renan26", rotulo: "Renan Santos", campo: "pct_renan_2026", tipo: "jenks" },
   { grupo: "Eleição 2026", id: "caiado26", rotulo: "Caiado", campo: "pct_caiado_2026", tipo: "jenks" },
   { grupo: "Eleição 2026", id: "inv26", rotulo: "Inválidos", campo: "pct_invalidos_2026", tipo: "jenks" },
   { grupo: "Eleição 2026", id: "nc26", rotulo: "Não comparecimento", campo: "pct_nc_2026", tipo: "jenks" },
-  { grupo: "Eleição 2022", id: "lula22", rotulo: "Lula", campo: "pct_lula_2022", tipo: "jenks" },
-  { grupo: "Eleição 2022", id: "bolsonaro22", rotulo: "Bolsonaro", campo: "pct_bolsonaro_2022", tipo: "jenks" },
+  { grupo: "Eleição 2022", id: "lula22", rotulo: "Lula", campo: "pct_lula_2022", tipo: "jenks", escala: "principais" },
+  { grupo: "Eleição 2022", id: "bolsonaro22", rotulo: "Bolsonaro", campo: "pct_bolsonaro_2022", tipo: "jenks", escala: "principais" },
   { grupo: "Eleição 2022", id: "tebet22", rotulo: "Tebet", campo: "pct_tebet_2022", tipo: "jenks" },
   { grupo: "Eleição 2022", id: "ciro22", rotulo: "Ciro", campo: "pct_ciro_2022", tipo: "jenks" },
   { grupo: "Eleição 2022", id: "inv22", rotulo: "Inválidos", campo: "pct_invalidos_2022", tipo: "jenks" },
@@ -134,11 +135,30 @@ function corDivergente(valor, minimo, maximo) {
   return "#f7f7f7";
 }
 
+function prepararCamadas(features) {
+  const grupos = new Map();
+  CAMADAS.filter((camada) => camada.escala).forEach((camada) => {
+    const lista = grupos.get(camada.escala) || [];
+    lista.push(...valoresDaCamada(features, camada.campo));
+    grupos.set(camada.escala, lista);
+  });
+  grupos.forEach((valores, nome) => {
+    const classes = nome === "principais" ? CLASSES_PRINCIPAIS : CLASSES_NATURAIS;
+    const quebras = quebrasNaturais(valores, classes);
+    const cores = coresSequenciais(quebras.length - 1);
+    CAMADAS.filter((camada) => camada.escala === nome).forEach((camada) => {
+      camada.def = { tipo: "jenks", quebras, compartilhada: true };
+      camada.cores = cores;
+    });
+  });
+  CAMADAS.filter((camada) => !camada.escala).forEach((camada) => prepararCamada(camada, features));
+}
+
 function prepararCamada(camada, features) {
   const valores = valoresDaCamada(features, camada.campo);
   if (camada.tipo === "jenks") {
     const quebras = quebrasNaturais(valores, CLASSES_NATURAIS);
-    camada.def = { tipo: "jenks", quebras };
+    camada.def = { tipo: "jenks", quebras, compartilhada: false };
     camada.cores = coresSequenciais(quebras.length - 1);
     return;
   }
@@ -232,7 +252,9 @@ function desenharLegenda() {
       item.innerHTML = `<i style="background:${cor}"></i><span>${formatarPercentual(quebras[i])} a ${formatarPercentual(quebras[i + 1])}</span>`;
       faixa.appendChild(item);
     });
-    nota.textContent = "Quebras naturais desta camada. Cinza é célula sem dado.";
+    nota.textContent = camadaAtiva.def.compartilhada
+      ? "Mesma escala de Lula e Bolsonaro, nos dois anos. Cinza é célula sem dado."
+      : "Quebras naturais desta camada. Cinza é célula sem dado.";
     return;
   }
   camadaAtiva.cores.forEach((cor) => {
@@ -284,7 +306,7 @@ desenharLegenda();
 fetch("dados/grade.geojson")
   .then((resposta) => resposta.json())
   .then((dados) => {
-    CAMADAS.forEach((camada) => prepararCamada(camada, dados.features));
+    prepararCamadas(dados.features);
     grade = L.geoJSON(dados, {
       style: estilo,
       onEachFeature(feature, layer) {
