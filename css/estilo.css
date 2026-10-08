@@ -1,0 +1,124 @@
+:root {
+  color-scheme: light;
+  --painel: #f7f4ef;
+  --texto: #1c1917;
+  --linha: #d6d3d1;
+  --destaque: #9a3412;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: "Segoe UI", sans-serif;
+  color: var(--texto);
+  background: #fff;
+}
+
+body.mapa {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100%;
+}
+
+header.topo, nav.topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px 8px;
+}
+
+header.topo a, nav.topo a {
+  color: var(--destaque);
+  font-weight: 600;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.painel {
+  background: var(--painel);
+  border-right: 1px solid var(--linha);
+  overflow: auto;
+  padding: 8px 16px 24px;
+}
+
+.grupo { margin-top: 18px; }
+
+.grupo h2 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+label.opcao {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 4px 0;
+  cursor: pointer;
+}
+
+#mapa { height: 100%; }
+
+.legenda {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--linha);
+}
+
+.legenda h2 { margin: 0 0 8px; font-size: 0.95rem; }
+
+.faixa {
+  height: 14px;
+  border: 1px solid var(--linha);
+  display: flex;
+}
+
+.faixa span { flex: 1; }
+
+.marcas {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.nota, .rodape {
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+body.grafico {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 8px 20px 32px;
+}
+
+.quadro {
+  height: 70vh;
+  min-height: 420px;
+}
+
+.leaflet-popup-content { font-size: 0.9rem; }
+
+@media (max-width: 800px) {
+  body.mapa {
+    grid-template-columns: 1fr;
+    grid-template-rows: 46vh minmax(0, 1fr);
+    height: 100%;
+  }
+
+  .painel {
+    min-height: 0;
+  }
+
+  #mapa {
+    order: -1;
+    min-height: 0;
+    height: 100%;
+  }
+}
