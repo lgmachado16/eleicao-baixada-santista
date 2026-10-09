@@ -44,8 +44,8 @@ function interpolar(origem, destino, t) {
 }
 
 function corDisputa(parteLula) {
-  const afastamento = Math.abs(parteLula - 0.5);
-  const intensidade = Math.min(1, afastamento / 0.25);
+  const afastamento = Math.min(0.25, Math.abs(parteLula - 0.5));
+  const intensidade = 0.38 + 0.62 * (afastamento / 0.25);
   if (parteLula >= 0.5) return interpolar("#ffffff", "#cc2812", intensidade);
   return interpolar("#ffffff", "#967311", intensidade);
 }
@@ -320,20 +320,28 @@ function desenharLegenda() {
   faixa.innerHTML = "";
   faixa.className = "faixa";
   marcas.innerHTML = "";
+  marcas.className = "marcas";
   titulo.textContent = `${camadaAtiva.grupo}: ${camadaAtiva.rotulo}`;
   if (!camadaAtiva.cores) {
     nota.textContent = "Cinza é célula sem dado.";
     return;
   }
   if (camadaAtiva.def.tipo === "disputa") {
-    faixa.classList.add("lista");
+    const etiquetas = ["75%", "70%", "65%", "60%", "55%", "50%", "50%", "55%", "60%", "65%", "70%", "75%"];
     FAIXAS_DISPUTA.forEach((item) => {
-      const linha = document.createElement("div");
-      linha.className = "classe";
-      linha.innerHTML = `<i style="background:${item.cor}"></i><span>${item.rotulo}</span>`;
-      faixa.appendChild(linha);
+      const parte = document.createElement("span");
+      parte.style.background = item.cor;
+      parte.title = item.rotulo;
+      faixa.appendChild(parte);
     });
-    nota.textContent = "Classes de 5 em 5 pontos da soma de Lula e Flávio. A cor cheia vale a partir de 75%. Cinza é célula sem dado.";
+    marcas.className = "marcas passos";
+    etiquetas.forEach((texto, indice) => {
+      const marca = document.createElement("span");
+      marca.textContent = texto;
+      marca.title = FAIXAS_DISPUTA[indice].rotulo;
+      marcas.appendChild(marca);
+    });
+    nota.textContent = "Escala de 5 em 5 pontos até 75% da soma. À esquerda, Lula; à direita, Flávio. As cores se encontram no meio. Cinza é célula sem dado.";
     return;
   }
   if (camadaAtiva.def.tipo === "jenks") {

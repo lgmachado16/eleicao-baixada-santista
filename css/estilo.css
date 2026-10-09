@@ -115,6 +115,14 @@ label.opcao {
   transform: translateX(-50%);
 }
 
+.marcas.passos span {
+  flex: 1;
+  position: static;
+  transform: none;
+  text-align: center;
+  font-size: 0.62rem;
+}
+
 .nota, .rodape {
   font-size: 0.8rem;
   line-height: 1.4;
