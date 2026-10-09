@@ -397,7 +397,7 @@ function montarPainel() {
 montarPainel();
 desenharLegenda();
 
-fetch("dados/grade.geojson")
+fetch("dados/grade.geojson?v=10")
   .then((resposta) => resposta.json())
   .then((dados) => {
     prepararCamadas(dados.features);

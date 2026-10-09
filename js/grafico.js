@@ -26,7 +26,7 @@ function reta(pontos) {
   ];
 }
 
-fetch("dados/grade.geojson")
+fetch("dados/grade.geojson?v=10")
   .then((resposta) => resposta.json())
   .then((dados) => {
     const porMunicipio = new Map();
