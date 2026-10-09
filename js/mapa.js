@@ -211,19 +211,11 @@ function prepararCamada(camada, features) {
 }
 
 function prepararComparacoes() {
-  const passo = 0.005;
-  const minimo = -0.05;
-  const maximo = 0.05;
-  const quantidade = Math.round((maximo - minimo) / passo);
-  const cores = Array.from({ length: quantidade }, (_, i) => {
-    const meio = minimo + (i + 0.5) * passo;
-    return corEspectral(meio, minimo, maximo);
-  });
-  cores[0] = ESPECTRAL[0];
-  cores[cores.length - 1] = ESPECTRAL[ESPECTRAL.length - 1];
+  const minimo = -0.1;
+  const maximo = 0.1;
   CAMADAS.filter((camada) => camada.tipo === "div").forEach((camada) => {
-    camada.def = { tipo: "div", min: minimo, max: maximo, passo, compartilhada: true };
-    camada.cores = cores;
+    camada.def = { tipo: "div", min: minimo, max: maximo, compartilhada: true };
+    camada.cores = ESPECTRAL.slice();
   });
 }
 
@@ -239,6 +231,7 @@ function indice(valor, camada) {
     return ultima;
   }
   const escala = camada.def;
+  if (!escala.passo) return null;
   const limitado = Math.min(escala.max - escala.passo / 2, Math.max(escala.min, numero));
   const posicao = Math.floor((limitado - escala.min) / escala.passo);
   return Math.max(0, Math.min(camada.cores.length - 1, posicao));
@@ -268,6 +261,9 @@ function estilo(feature, destaque = false) {
   if (camadaAtiva.tipo === "disputa") {
     const parte = feature.properties[camadaAtiva.campo];
     if (numeroValido(parte)) fillColor = corDaFaixa(Number(parte), FAIXAS_DISPUTA);
+  } else if (camadaAtiva.tipo === "div") {
+    const valor = feature.properties[camadaAtiva.campo];
+    if (numeroValido(valor)) fillColor = corEspectral(Number(valor), camadaAtiva.def.min, camadaAtiva.def.max);
   } else if (camadaAtiva.cores) {
     const i = indice(feature.properties[camadaAtiva.campo], camadaAtiva);
     if (i !== null) fillColor = camadaAtiva.cores[i];
@@ -314,6 +310,7 @@ function desenharLegenda() {
   const nota = document.getElementById("legenda-nota");
   faixa.innerHTML = "";
   faixa.className = "faixa";
+  faixa.style.background = "";
   marcas.innerHTML = "";
   marcas.className = "marcas";
   titulo.textContent = `${camadaAtiva.grupo}: ${camadaAtiva.rotulo}`;
@@ -354,17 +351,14 @@ function desenharLegenda() {
       : "Quebras naturais desta camada. Cinza é célula sem dado.";
     return;
   }
-  camadaAtiva.cores.forEach((cor) => {
-    const parte = document.createElement("span");
-    parte.style.background = cor;
-    faixa.appendChild(parte);
-  });
-  const escala = camadaAtiva.def;
-  const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
-  marcas.innerHTML = `<span>${formatarPercentual(escala.min)}</span><span class="zero" style="left:${zero}%">0%</span><span>${formatarPercentual(escala.max)}</span>`;
-  nota.textContent = camadaAtiva.def.compartilhada
-    ? "Mesma escala Spectral nas comparações. A cor mais forte vale a partir de 5%, para mais ou para menos. Vermelho é redução e azul é crescimento. Cinza é célula sem dado."
-    : "Classes de 0,5 em 0,5 ponto. Vermelho é redução e azul é crescimento. Cinza é célula sem dado.";
+  if (camadaAtiva.def.tipo === "div") {
+    const escala = camadaAtiva.def;
+    faixa.style.background = `linear-gradient(to right, ${ESPECTRAL.join(", ")})`;
+    const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
+    marcas.innerHTML = `<span>${formatarPercentual(escala.min)}</span><span class="zero" style="left:${zero}%">0%</span><span>${formatarPercentual(escala.max)}</span>`;
+    nota.textContent = "Mesma escala Spectral, contínua, de −10% a +10%. A cor mais forte vale a partir de 10%, para mais ou para menos. Vermelho é redução e azul é crescimento. Cinza é célula sem dado.";
+    return;
+  }
 }
 
 function aplicarCamada(id) {
