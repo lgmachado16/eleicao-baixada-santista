@@ -130,7 +130,7 @@ function corDivergente(valor, minimo, maximo) {
   }
   if (valor > 0) {
     const t = maximo === 0 ? 0 : valor / maximo;
-    return interpolar("#f7f7f7", "#2166ac", t);
+    return interpolar("#f7f7f7", "#1a9850", t);
   }
   return "#f7f7f7";
 }
@@ -265,7 +265,7 @@ function desenharLegenda() {
   const escala = camadaAtiva.def;
   const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
   marcas.innerHTML = `<span>${formatarPercentual(escala.min)}</span><span class="zero" style="left:${zero}%">0%</span><span>${formatarPercentual(escala.max)}</span>`;
-  nota.textContent = "Classes de 0,5 em 0,5 ponto. Vermelho é perda e azul é ganho. Cinza é célula sem dado.";
+  nota.textContent = "Classes de 0,5 em 0,5 ponto. Vermelho é redução e verde é crescimento. Cinza é célula sem dado.";
 }
 
 function aplicarCamada(id) {
