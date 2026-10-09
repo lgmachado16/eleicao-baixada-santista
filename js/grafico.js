@@ -73,7 +73,16 @@ fetch("dados/grade.geojson?v=11")
   .then((dados) => {
     const lula = contar(dados.features, "dif_pct_lula");
     const bolsonaro = contar(dados.features, "dif_pct_bolsonaro");
-    const maximo = Math.max(...lula.perdeu, ...lula.ganhou, ...bolsonaro.perdeu, ...bolsonaro.ganhou);
+    const invalidos = contar(dados.features, "dif_pct_invalidos");
+    const maximo = Math.max(
+      ...lula.perdeu,
+      ...lula.ganhou,
+      ...bolsonaro.perdeu,
+      ...bolsonaro.ganhou,
+      ...invalidos.perdeu,
+      ...invalidos.ganhou,
+    );
     desenhar(document.getElementById("grafico-lula"), lula, maximo);
     desenhar(document.getElementById("grafico-bolsonaro"), bolsonaro, maximo);
+    desenhar(document.getElementById("grafico-invalidos"), invalidos, maximo);
   });

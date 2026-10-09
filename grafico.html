@@ -8,10 +8,10 @@
 </head>
 <body class="grafico">
   <nav class="topo">
-    <h1>Renda e variação de Lula e de Flávio/Bolsonaro</h1>
+    <h1>Renda e variação de Lula, de Flávio/Bolsonaro e dos inválidos</h1>
     <a href="index.html">Mapa</a>
   </nav>
-  <p class="nota">Cada coluna conta células da grade hexagonal com voto em 2022 e em 2026. A renda é a mediana do responsável nos setores de 2026. Perda é comparação negativa e ganho é comparação positiva. Empate em zero não entra nas colunas.</p>
+  <p class="nota">Cada coluna conta células da grade hexagonal com voto em 2022 e em 2026. A renda é a mediana do responsável nos setores de 2026. Perda é comparação negativa e ganho é comparação positiva. Empate em zero não entra nas colunas. Os três gráficos usam a mesma escala vertical.</p>
   <h2>Lula</h2>
   <div class="quadro">
     <canvas id="grafico-lula"></canvas>
@@ -20,7 +20,11 @@
   <div class="quadro">
     <canvas id="grafico-bolsonaro"></canvas>
   </div>
+  <h2>Inválidos</h2>
+  <div class="quadro">
+    <canvas id="grafico-invalidos"></canvas>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
-  <script src="js/grafico.js?v=13"></script>
+  <script src="js/grafico.js?v=14"></script>
 </body>
 </html>
