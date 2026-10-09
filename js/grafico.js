@@ -68,7 +68,7 @@ function desenhar(canvas, contagem, maximo) {
   });
 }
 
-fetch("dados/grade.geojson?v=10")
+fetch("dados/grade.geojson?v=11")
   .then((resposta) => resposta.json())
   .then((dados) => {
     const lula = contar(dados.features, "dif_pct_lula");
