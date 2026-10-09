@@ -170,15 +170,6 @@ function coresSequenciais(quantidade) {
   });
 }
 
-function percentil(valores, fracao) {
-  const dados = valores.slice().sort((a, b) => a - b);
-  const posicao = (dados.length - 1) * fracao;
-  const abaixo = Math.floor(posicao);
-  const acima = Math.ceil(posicao);
-  if (abaixo === acima) return dados[abaixo];
-  return dados[abaixo] + (dados[acima] - dados[abaixo]) * (posicao - abaixo);
-}
-
 const ESPECTRAL = [
   "#9e0142", "#d53e4f", "#f46d43", "#fdae61", "#fee08b", "#ffffbf",
   "#e6f598", "#abdda4", "#66c2a5", "#3288bd", "#5e4fa2",
@@ -209,7 +200,7 @@ function prepararCamadas(features) {
     });
   });
   CAMADAS.filter((camada) => !camada.escala && camada.tipo === "jenks").forEach((camada) => prepararCamada(camada, features));
-  prepararComparacoes(features);
+  prepararComparacoes();
 }
 
 function prepararCamada(camada, features) {
@@ -219,21 +210,17 @@ function prepararCamada(camada, features) {
   camada.cores = coresSequenciais(quebras.length - 1);
 }
 
-function prepararComparacoes(features) {
+function prepararComparacoes() {
   const passo = 0.005;
-  const valores = CAMADAS
-    .filter((camada) => camada.tipo === "div")
-    .flatMap((camada) => valoresDaCamada(features, camada.campo));
-  const extremo = Math.max(Math.abs(percentil(valores, 0.05)), Math.abs(percentil(valores, 0.95)));
-  const indicePasso = Math.max(1, Math.ceil(extremo / passo - 1e-8));
-  const limite = Math.round(indicePasso * passo * 1000) / 1000;
-  const minimo = -limite;
-  const maximo = limite;
+  const minimo = -0.05;
+  const maximo = 0.05;
   const quantidade = Math.round((maximo - minimo) / passo);
   const cores = Array.from({ length: quantidade }, (_, i) => {
     const meio = minimo + (i + 0.5) * passo;
     return corEspectral(meio, minimo, maximo);
   });
+  cores[0] = ESPECTRAL[0];
+  cores[cores.length - 1] = ESPECTRAL[ESPECTRAL.length - 1];
   CAMADAS.filter((camada) => camada.tipo === "div").forEach((camada) => {
     camada.def = { tipo: "div", min: minimo, max: maximo, passo, compartilhada: true };
     camada.cores = cores;
@@ -376,7 +363,7 @@ function desenharLegenda() {
   const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
   marcas.innerHTML = `<span>${formatarPercentual(escala.min)}</span><span class="zero" style="left:${zero}%">0%</span><span>${formatarPercentual(escala.max)}</span>`;
   nota.textContent = camadaAtiva.def.compartilhada
-    ? "Mesma escala Spectral nas comparações. Vermelho é redução e azul é crescimento. Cinza é célula sem dado."
+    ? "Mesma escala Spectral nas comparações. A cor mais forte vale a partir de 5%, para mais ou para menos. Vermelho é redução e azul é crescimento. Cinza é célula sem dado."
     : "Classes de 0,5 em 0,5 ponto. Vermelho é redução e azul é crescimento. Cinza é célula sem dado.";
 }
 
