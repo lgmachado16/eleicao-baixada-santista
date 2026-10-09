@@ -133,6 +133,11 @@ body.grafico {
 
 .leaflet-popup-content { font-size: 0.9rem; }
 
+.ficha {
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
 @media (max-width: 800px) {
   body.mapa {
     grid-template-columns: 1fr;

@@ -123,16 +123,17 @@ function percentil(valores, fracao) {
   return dados[abaixo] + (dados[acima] - dados[abaixo]) * (posicao - abaixo);
 }
 
-function corDivergente(valor, minimo, maximo) {
-  if (valor < 0) {
-    const t = minimo === 0 ? 0 : valor / minimo;
-    return interpolar("#f7f7f7", "#b2182b", t);
-  }
-  if (valor > 0) {
-    const t = maximo === 0 ? 0 : valor / maximo;
-    return interpolar("#f7f7f7", "#1a9850", t);
-  }
-  return "#f7f7f7";
+const ESPECTRAL = [
+  "#9e0142", "#d53e4f", "#f46d43", "#fdae61", "#fee08b", "#ffffbf",
+  "#e6f598", "#abdda4", "#66c2a5", "#3288bd", "#5e4fa2",
+];
+
+function corEspectral(valor, minimo, maximo) {
+  const t = maximo === minimo ? 0.5 : (valor - minimo) / (maximo - minimo);
+  const posicao = Math.min(1, Math.max(0, t)) * (ESPECTRAL.length - 1);
+  const indiceCor = Math.floor(posicao);
+  if (indiceCor >= ESPECTRAL.length - 1) return ESPECTRAL[ESPECTRAL.length - 1];
+  return interpolar(ESPECTRAL[indiceCor], ESPECTRAL[indiceCor + 1], posicao - indiceCor);
 }
 
 function prepararCamadas(features) {
@@ -151,30 +152,35 @@ function prepararCamadas(features) {
       camada.cores = cores;
     });
   });
-  CAMADAS.filter((camada) => !camada.escala).forEach((camada) => prepararCamada(camada, features));
+  CAMADAS.filter((camada) => !camada.escala && camada.tipo === "jenks").forEach((camada) => prepararCamada(camada, features));
+  prepararComparacoes(features);
 }
 
 function prepararCamada(camada, features) {
   const valores = valoresDaCamada(features, camada.campo);
-  if (camada.tipo === "jenks") {
-    const quebras = quebrasNaturais(valores, CLASSES_NATURAIS);
-    camada.def = { tipo: "jenks", quebras, compartilhada: false };
-    camada.cores = coresSequenciais(quebras.length - 1);
-    return;
-  }
+  const quebras = quebrasNaturais(valores, CLASSES_NATURAIS);
+  camada.def = { tipo: "jenks", quebras, compartilhada: false };
+  camada.cores = coresSequenciais(quebras.length - 1);
+}
+
+function prepararComparacoes(features) {
   const passo = 0.005;
-  const encaixe = (valor, direcao) => {
-    const indicePasso = direcao < 0 ? Math.floor(valor / passo + 1e-8) : Math.ceil(valor / passo - 1e-8);
-    return Math.round(indicePasso * passo * 1000) / 1000;
-  };
-  let minimo = encaixe(Math.min(percentil(valores, 0.05), 0), -1);
-  let maximo = encaixe(Math.max(percentil(valores, 0.95), 0), 1);
-  if (minimo === maximo) maximo = Math.round((minimo + passo) * 1000) / 1000;
+  const valores = CAMADAS
+    .filter((camada) => camada.tipo === "div")
+    .flatMap((camada) => valoresDaCamada(features, camada.campo));
+  const extremo = Math.max(Math.abs(percentil(valores, 0.05)), Math.abs(percentil(valores, 0.95)));
+  const indicePasso = Math.max(1, Math.ceil(extremo / passo - 1e-8));
+  const limite = Math.round(indicePasso * passo * 1000) / 1000;
+  const minimo = -limite;
+  const maximo = limite;
   const quantidade = Math.round((maximo - minimo) / passo);
-  camada.def = { tipo: "div", min: minimo, max: maximo, passo };
-  camada.cores = Array.from({ length: quantidade }, (_, i) => {
+  const cores = Array.from({ length: quantidade }, (_, i) => {
     const meio = minimo + (i + 0.5) * passo;
-    return corDivergente(meio, minimo, maximo);
+    return corEspectral(meio, minimo, maximo);
+  });
+  CAMADAS.filter((camada) => camada.tipo === "div").forEach((camada) => {
+    camada.def = { tipo: "div", min: minimo, max: maximo, passo, compartilhada: true };
+    camada.cores = cores;
   });
 }
 
@@ -214,20 +220,28 @@ L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_L
 let camadaAtiva = CAMADAS[0];
 let grade;
 
-function estilo(feature) {
+function estilo(feature, destaque = false) {
   const i = camadaAtiva.cores ? indice(feature.properties[camadaAtiva.campo], camadaAtiva) : null;
   return {
     fillColor: i === null ? "#d9d9d9" : camadaAtiva.cores[i],
-    stroke: false,
-    weight: 0,
+    color: "#1c1917",
+    weight: destaque ? 2 : 0,
+    opacity: destaque ? 1 : 0,
+    stroke: destaque,
     fillOpacity: OPACIDADE,
   };
 }
 
 function popup(feature) {
   const p = feature.properties;
-  const valor = p[camadaAtiva.campo];
-  return `<strong>${camadaAtiva.rotulo}</strong><br>${formatarPercentual(valor)}<br>${p.nm_mun || "sem município"}<br>Renda mediana: ${formatarRenda(p.renda_mediana)}`;
+  const linhas = CAMADAS
+    .filter((camada) => camada.grupo === camadaAtiva.grupo)
+    .map((camada) => {
+      const texto = `${camada.rotulo}: ${formatarPercentual(p[camada.campo])}`;
+      return camada.id === camadaAtiva.id ? `<strong>${texto}</strong>` : texto;
+    })
+    .join("<br>");
+  return `<strong>${camadaAtiva.grupo}</strong><br>${linhas}<br>${p.nm_mun || "sem município"}<br>Renda mediana: ${formatarRenda(p.renda_mediana)}`;
 }
 
 function desenharLegenda() {
@@ -265,15 +279,17 @@ function desenharLegenda() {
   const escala = camadaAtiva.def;
   const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
   marcas.innerHTML = `<span>${formatarPercentual(escala.min)}</span><span class="zero" style="left:${zero}%">0%</span><span>${formatarPercentual(escala.max)}</span>`;
-  nota.textContent = "Classes de 0,5 em 0,5 ponto. Vermelho é redução e verde é crescimento. Cinza é célula sem dado.";
+  nota.textContent = camadaAtiva.def.compartilhada
+    ? "Mesma escala Spectral nas comparações. Vermelho é redução e azul é crescimento. Cinza é célula sem dado."
+    : "Classes de 0,5 em 0,5 ponto. Vermelho é redução e azul é crescimento. Cinza é célula sem dado.";
 }
 
 function aplicarCamada(id) {
   camadaAtiva = CAMADAS.find((item) => item.id === id) || CAMADAS[0];
   if (grade) {
-    grade.setStyle(estilo);
+    grade.setStyle((feature) => estilo(feature));
     grade.eachLayer((layer) => {
-      if (layer.isPopupOpen()) layer.setPopupContent(popup(layer.feature));
+      if (layer.isTooltipOpen()) layer.setTooltipContent(popup(layer.feature));
     });
   }
   desenharLegenda();
@@ -310,7 +326,14 @@ fetch("dados/grade.geojson")
     grade = L.geoJSON(dados, {
       style: estilo,
       onEachFeature(feature, layer) {
-        layer.bindPopup(() => popup(feature));
+        layer.bindTooltip(() => popup(feature), { sticky: true, className: "ficha", opacity: 0.96 });
+        layer.on("mouseover", () => {
+          layer.setStyle(estilo(feature, true));
+          layer.bringToFront();
+        });
+        layer.on("mouseout", () => {
+          layer.setStyle(estilo(feature, false));
+        });
       },
     }).addTo(mapa);
     mapa.fitBounds(grade.getBounds(), { padding: [16, 16] });
