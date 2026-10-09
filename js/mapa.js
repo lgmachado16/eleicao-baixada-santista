@@ -3,7 +3,7 @@ const CLASSES_NATURAIS = 5;
 const CLASSES_PRINCIPAIS = 6;
 
 const CAMADAS = [
-  { grupo: "Eleição 2026", id: "disputa26", rotulo: "Lula x Flávio", campo: "parte_lula_2026", tipo: "disputa" },
+  { grupo: "Eleição 2026", id: "disputa26", rotulo: "Lula x Flávio", campo: "parte_lula_2026", tipo: "disputa", adversario: "Flávio" },
   { grupo: "Eleição 2026", id: "lula26", rotulo: "Lula", campo: "pct_lula_2026", tipo: "jenks", escala: "principais" },
   { grupo: "Eleição 2026", id: "flavio26", rotulo: "Flávio Bolsonaro", campo: "pct_flavio_2026", tipo: "jenks", escala: "principais" },
   { grupo: "Eleição 2026", id: "cury26", rotulo: "Augusto Cury", campo: "pct_cury_2026", tipo: "jenks" },
@@ -11,6 +11,7 @@ const CAMADAS = [
   { grupo: "Eleição 2026", id: "caiado26", rotulo: "Caiado", campo: "pct_caiado_2026", tipo: "jenks" },
   { grupo: "Eleição 2026", id: "inv26", rotulo: "Inválidos", campo: "pct_invalidos_2026", tipo: "jenks" },
   { grupo: "Eleição 2026", id: "nc26", rotulo: "Não comparecimento", campo: "pct_nc_2026", tipo: "jenks" },
+  { grupo: "Eleição 2022", id: "disputa22", rotulo: "Lula x Bolsonaro", campo: "parte_lula_2022", tipo: "disputa", adversario: "Bolsonaro" },
   { grupo: "Eleição 2022", id: "lula22", rotulo: "Lula", campo: "pct_lula_2022", tipo: "jenks", escala: "principais" },
   { grupo: "Eleição 2022", id: "bolsonaro22", rotulo: "Bolsonaro", campo: "pct_bolsonaro_2022", tipo: "jenks", escala: "principais" },
   { grupo: "Eleição 2022", id: "tebet22", rotulo: "Tebet", campo: "pct_tebet_2022", tipo: "jenks" },
@@ -64,22 +65,27 @@ function faixasDisputa() {
       rotulo: `Lula, ${Math.round(inicio * 100)}% a ${Math.round(fim * 100)}%`,
     });
   }
-  const flavio = inicios.map((inicio) => {
+  const adversario = inicios.map((inicio) => {
     const fim = Math.round((inicio + 0.05) * 100) / 100;
     return {
-      vencedor: "flavio",
+      vencedor: "adversario",
       inicio,
       fim,
       cor: corDisputa(1 - (inicio + fim) / 2),
-      rotulo: `Flávio, ${Math.round(inicio * 100)}% a ${Math.round(fim * 100)}%`,
     };
   });
-  flavio.push({ vencedor: "flavio", inicio: 0.75, fim: 1, cor: "#967311", rotulo: "Flávio, 75% ou mais" });
-  return [...lula, ...flavio];
+  adversario.push({ vencedor: "adversario", inicio: 0.75, fim: 1, cor: "#967311" });
+  return [...lula, ...adversario];
+}
+
+function rotuloDisputa(faixa, adversario) {
+  const nome = faixa.vencedor === "lula" ? "Lula" : adversario;
+  if (faixa.inicio >= 0.75) return `${nome}, 75% ou mais`;
+  return `${nome}, ${Math.round(faixa.inicio * 100)}% a ${Math.round(faixa.fim * 100)}%`;
 }
 
 function corDaFaixa(parteLula, faixas) {
-  const vencedor = parteLula >= 0.5 ? "lula" : "flavio";
+  const vencedor = parteLula >= 0.5 ? "lula" : "adversario";
   const parcela = vencedor === "lula" ? parteLula : 1 - parteLula;
   const grupo = faixas.filter((faixa) => faixa.vencedor === vencedor);
   const faixa = grupo.find((item) => parcela >= item.inicio && (item.fim === 1 ? parcela <= item.fim : parcela < item.fim));
@@ -87,8 +93,10 @@ function corDaFaixa(parteLula, faixas) {
 }
 
 const FAIXAS_DISPUTA = faixasDisputa();
-CAMADAS[0].def = { tipo: "disputa" };
-CAMADAS[0].cores = FAIXAS_DISPUTA.map((faixa) => faixa.cor);
+CAMADAS.filter((camada) => camada.tipo === "disputa").forEach((camada) => {
+  camada.def = { tipo: "disputa" };
+  camada.cores = FAIXAS_DISPUTA.map((faixa) => faixa.cor);
+});
 
 function numeroValido(valor) {
   return valor !== null && valor !== undefined && Number.isFinite(Number(valor));
@@ -293,7 +301,7 @@ function textoCamada(camada, propriedades) {
     if (!numeroValido(parte)) return `${camada.rotulo}: sem dado`;
     const numero = Number(parte);
     if (Math.abs(numero - 0.5) < 1e-9) return `${camada.rotulo}: empate na soma`;
-    const vencedor = numero > 0.5 ? "Lula" : "Flávio";
+    const vencedor = numero > 0.5 ? "Lula" : camada.adversario;
     const parcela = numero > 0.5 ? numero : 1 - numero;
     return `${camada.rotulo}: ${vencedor} com ${formatarPercentual(parcela)} da soma`;
   }
@@ -328,20 +336,21 @@ function desenharLegenda() {
   }
   if (camadaAtiva.def.tipo === "disputa") {
     const etiquetas = ["75%", "70%", "65%", "60%", "55%", "50%", "50%", "55%", "60%", "65%", "70%", "75%"];
+    const adversario = camadaAtiva.adversario;
     FAIXAS_DISPUTA.forEach((item) => {
       const parte = document.createElement("span");
       parte.style.background = item.cor;
-      parte.title = item.rotulo;
+      parte.title = rotuloDisputa(item, adversario);
       faixa.appendChild(parte);
     });
     marcas.className = "marcas passos";
     etiquetas.forEach((texto, indice) => {
       const marca = document.createElement("span");
       marca.textContent = texto;
-      marca.title = FAIXAS_DISPUTA[indice].rotulo;
+      marca.title = rotuloDisputa(FAIXAS_DISPUTA[indice], adversario);
       marcas.appendChild(marca);
     });
-    nota.textContent = "Escala de 5 em 5 pontos até 75% da soma. À esquerda, Lula; à direita, Flávio. As cores se encontram no meio. Cinza é célula sem dado.";
+    nota.textContent = `Escala de 5 em 5 pontos até 75% da soma. À esquerda, Lula; à direita, ${adversario}. As cores se encontram no meio. Cinza é célula sem dado.`;
     return;
   }
   if (camadaAtiva.def.tipo === "jenks") {
@@ -412,13 +421,16 @@ fetch("dados/grade.geojson")
     prepararCamadas(dados.features);
     dados.features.forEach((feature) => {
       const p = feature.properties;
-      const lula = Number(p.pct_lula_2026);
+      const lula26 = Number(p.pct_lula_2026);
       const flavio = Number(p.pct_flavio_2026);
-      if (!numeroValido(lula) || !numeroValido(flavio) || lula + flavio <= 0) {
-        p.parte_lula_2026 = null;
-        return;
-      }
-      p.parte_lula_2026 = lula / (lula + flavio);
+      p.parte_lula_2026 = numeroValido(lula26) && numeroValido(flavio) && lula26 + flavio > 0
+        ? lula26 / (lula26 + flavio)
+        : null;
+      const lula22 = Number(p.pct_lula_2022);
+      const bolsonaro = Number(p.pct_bolsonaro_2022);
+      p.parte_lula_2022 = numeroValido(lula22) && numeroValido(bolsonaro) && lula22 + bolsonaro > 0
+        ? lula22 / (lula22 + bolsonaro)
+        : null;
     });
     grade = L.geoJSON(dados, {
       style: estilo,
