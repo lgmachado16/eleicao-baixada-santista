@@ -18,10 +18,10 @@ const CAMADAS = [
   { grupo: "Eleição 2022", id: "ciro22", rotulo: "Ciro", campo: "pct_ciro_2022", tipo: "jenks" },
   { grupo: "Eleição 2022", id: "inv22", rotulo: "Inválidos", campo: "pct_invalidos_2022", tipo: "jenks" },
   { grupo: "Eleição 2022", id: "nc22", rotulo: "Não comparecimento", campo: "pct_nc_2022", tipo: "jenks" },
-  { grupo: "Comparação 2026x2022", id: "difLula", rotulo: "Lula", campo: "var_lula", tipo: "div" },
-  { grupo: "Comparação 2026x2022", id: "difBolsonaro", rotulo: "Bolsonaro / Flávio", campo: "var_bolsonaro", tipo: "div" },
-  { grupo: "Comparação 2026x2022", id: "difInv", rotulo: "Inválidos", campo: "var_invalidos", tipo: "div" },
-  { grupo: "Comparação 2026x2022", id: "difNc", rotulo: "Não comparecimento", campo: "var_nc", tipo: "div" },
+  { grupo: "Comparação 2026x2022", id: "difLula", rotulo: "Lula", campo: "dif_pct_lula", tipo: "div" },
+  { grupo: "Comparação 2026x2022", id: "difBolsonaro", rotulo: "Bolsonaro / Flávio", campo: "dif_pct_bolsonaro", tipo: "div" },
+  { grupo: "Comparação 2026x2022", id: "difInv", rotulo: "Inválidos", campo: "dif_pct_invalidos", tipo: "div" },
+  { grupo: "Comparação 2026x2022", id: "difNc", rotulo: "Não comparecimento", campo: "dif_pct_nc", tipo: "div" },
 ];
 
 function hexParaRgb(hex) {
@@ -211,8 +211,8 @@ function prepararCamada(camada, features) {
 }
 
 function prepararComparacoes() {
-  const minimo = -1;
-  const maximo = 1;
+  const minimo = -0.1;
+  const maximo = 0.1;
   CAMADAS.filter((camada) => camada.tipo === "div").forEach((camada) => {
     camada.def = { tipo: "div", min: minimo, max: maximo, compartilhada: true };
     camada.cores = ESPECTRAL.slice();
@@ -357,7 +357,7 @@ function desenharLegenda() {
     faixa.style.background = `linear-gradient(to right, ${ESPECTRAL.join(", ")})`;
     const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
     marcas.innerHTML = `<span>${formatarPercentual(escala.min)}</span><span class="zero" style="left:${zero}%">0%</span><span>${formatarPercentual(escala.max)}</span>`;
-    nota.textContent = "Variação percentual dos votos absolutos em relação a 2022. Escala contínua de −100% a +100%. A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento. Cinza é célula sem dado.";
+    nota.textContent = "Diferença dos percentuais, 2026 menos 2022. Escala contínua de −10% a +10%. A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento. Cinza é célula sem dado.";
     return;
   }
 }
