@@ -289,17 +289,27 @@ function valorVisivel(propriedades, camada) {
 
 function estilo(feature, destaque = false) {
   let fillColor = "#d9d9d9";
+  let temDado = false;
   if (camadaAtiva.tipo === "disputa") {
     const parte = feature.properties[camadaAtiva.campo];
-    if (numeroValido(parte)) fillColor = corDaFaixa(Number(parte), FAIXAS_DISPUTA);
+    if (numeroValido(parte)) {
+      fillColor = corDaFaixa(Number(parte), FAIXAS_DISPUTA);
+      temDado = true;
+    }
   } else if (camadaAtiva.tipo === "div") {
     const valor = feature.properties[camadaAtiva.campo];
-    if (numeroValido(valor)) fillColor = corEspectral(Number(valor), camadaAtiva.def.min, camadaAtiva.def.max);
+    if (numeroValido(valor)) {
+      fillColor = corEspectral(Number(valor), camadaAtiva.def.min, camadaAtiva.def.max);
+      temDado = true;
+    }
   } else if (camadaAtiva.tipo === "jenks") {
     const atual = vista(camadaAtiva);
     if (atual.def && atual.cores) {
       const i = indice(valorVisivel(feature.properties, camadaAtiva), atual);
-      if (i !== null) fillColor = atual.cores[i];
+      if (i !== null) {
+        fillColor = atual.cores[i];
+        temDado = true;
+      }
     }
   }
   return {
@@ -308,7 +318,8 @@ function estilo(feature, destaque = false) {
     weight: destaque ? 2 : 0,
     opacity: destaque ? 1 : 0,
     stroke: destaque,
-    fillOpacity: OPACIDADE,
+    fillOpacity: temDado ? OPACIDADE : 0,
+    fill: temDado,
   };
 }
 
@@ -352,7 +363,7 @@ function desenharLegenda() {
   marcas.className = "marcas";
   titulo.textContent = `${camadaAtiva.grupo}: ${camadaAtiva.rotulo}`;
   if (!camadaAtiva.cores) {
-    nota.textContent = "Cinza é célula sem dado.";
+    nota.textContent = "";
     return;
   }
   if (camadaAtiva.def.tipo === "disputa") {
@@ -371,7 +382,7 @@ function desenharLegenda() {
       marca.title = rotuloDisputa(FAIXAS_DISPUTA[indice], adversario);
       marcas.appendChild(marca);
     });
-    nota.textContent = `Escala de 5 em 5 pontos até 75% da soma. À esquerda, Lula; à direita, ${adversario}. As cores se encontram no meio. Cinza é célula sem dado.`;
+    nota.textContent = `Escala de 5 em 5 pontos até 75% da soma. À esquerda, Lula; à direita, ${adversario}. As cores se encontram no meio.`;
     return;
   }
   if (camadaAtiva.def && camadaAtiva.def.tipo === "jenks") {
@@ -387,8 +398,8 @@ function desenharLegenda() {
     });
     const unidade = atual.absoluto ? " A escala está em votos." : "";
     nota.textContent = atual.def.compartilhada
-      ? `Mesma escala de Lula e Bolsonaro, nos dois anos.${unidade} Cinza é célula sem dado.`
-      : `Quebras naturais desta camada.${unidade} Cinza é célula sem dado.`;
+      ? `Mesma escala de Lula e Bolsonaro, nos dois anos.${unidade}`
+      : `Quebras naturais desta camada.${unidade}`;
     return;
   }
   if (camadaAtiva.def.tipo === "div") {
@@ -396,7 +407,7 @@ function desenharLegenda() {
     faixa.style.background = `linear-gradient(to right, ${ESPECTRAL.join(", ")})`;
     const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
     marcas.innerHTML = `<span>${formatarPercentual(escala.min)}</span><span class="zero" style="left:${zero}%">0%</span><span>${formatarPercentual(escala.max)}</span>`;
-    nota.textContent = "Diferença dos percentuais, 2026 menos 2022. Escala contínua de −10% a +10%. A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento. Cinza é célula sem dado.";
+    nota.textContent = "Diferença dos percentuais, 2026 menos 2022. Escala contínua de −10% a +10%. A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento.";
     return;
   }
 }
