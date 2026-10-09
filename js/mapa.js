@@ -44,16 +44,51 @@ function interpolar(origem, destino, t) {
 }
 
 function corDisputa(parteLula) {
-  if (parteLula >= 0.5) return interpolar("#ffffff", "#cc2812", (parteLula - 0.5) / 0.5);
-  return interpolar("#ffffff", "#967311", (0.5 - parteLula) / 0.5);
+  const afastamento = Math.abs(parteLula - 0.5);
+  const intensidade = Math.min(1, afastamento / 0.25);
+  if (parteLula >= 0.5) return interpolar("#ffffff", "#cc2812", intensidade);
+  return interpolar("#ffffff", "#967311", intensidade);
 }
 
-function coresDisputa(quantidade = 41) {
-  return Array.from({ length: quantidade }, (_, i) => corDisputa(1 - i / (quantidade - 1)));
+function faixasDisputa() {
+  const inicios = [0.5, 0.55, 0.6, 0.65, 0.7];
+  const lula = [{ vencedor: "lula", inicio: 0.75, fim: 1, cor: "#cc2812", rotulo: "Lula, 75% ou mais" }];
+  for (let i = inicios.length - 1; i >= 0; i -= 1) {
+    const inicio = inicios[i];
+    const fim = Math.round((inicio + 0.05) * 100) / 100;
+    lula.push({
+      vencedor: "lula",
+      inicio,
+      fim,
+      cor: corDisputa((inicio + fim) / 2),
+      rotulo: `Lula, ${Math.round(inicio * 100)}% a ${Math.round(fim * 100)}%`,
+    });
+  }
+  const flavio = inicios.map((inicio) => {
+    const fim = Math.round((inicio + 0.05) * 100) / 100;
+    return {
+      vencedor: "flavio",
+      inicio,
+      fim,
+      cor: corDisputa(1 - (inicio + fim) / 2),
+      rotulo: `Flávio, ${Math.round(inicio * 100)}% a ${Math.round(fim * 100)}%`,
+    };
+  });
+  flavio.push({ vencedor: "flavio", inicio: 0.75, fim: 1, cor: "#967311", rotulo: "Flávio, 75% ou mais" });
+  return [...lula, ...flavio];
 }
 
-CAMADAS[0].def = { tipo: "disputa", min: 0, max: 1 };
-CAMADAS[0].cores = coresDisputa();
+function corDaFaixa(parteLula, faixas) {
+  const vencedor = parteLula >= 0.5 ? "lula" : "flavio";
+  const parcela = vencedor === "lula" ? parteLula : 1 - parteLula;
+  const grupo = faixas.filter((faixa) => faixa.vencedor === vencedor);
+  const faixa = grupo.find((item) => parcela >= item.inicio && (item.fim === 1 ? parcela <= item.fim : parcela < item.fim));
+  return (faixa || grupo.find((item) => item.fim === 1)).cor;
+}
+
+const FAIXAS_DISPUTA = faixasDisputa();
+CAMADAS[0].def = { tipo: "disputa" };
+CAMADAS[0].cores = FAIXAS_DISPUTA.map((faixa) => faixa.cor);
 
 function numeroValido(valor) {
   return valor !== null && valor !== undefined && Number.isFinite(Number(valor));
@@ -237,7 +272,7 @@ function estilo(feature, destaque = false) {
   let fillColor = "#d9d9d9";
   if (camadaAtiva.tipo === "disputa") {
     const parte = feature.properties[camadaAtiva.campo];
-    if (numeroValido(parte)) fillColor = corDisputa(Number(parte));
+    if (numeroValido(parte)) fillColor = corDaFaixa(Number(parte), FAIXAS_DISPUTA);
   } else if (camadaAtiva.cores) {
     const i = indice(feature.properties[camadaAtiva.campo], camadaAtiva);
     if (i !== null) fillColor = camadaAtiva.cores[i];
@@ -291,13 +326,14 @@ function desenharLegenda() {
     return;
   }
   if (camadaAtiva.def.tipo === "disputa") {
-    camadaAtiva.cores.forEach((cor) => {
-      const parte = document.createElement("span");
-      parte.style.background = cor;
-      faixa.appendChild(parte);
+    faixa.classList.add("lista");
+    FAIXAS_DISPUTA.forEach((item) => {
+      const linha = document.createElement("div");
+      linha.className = "classe";
+      linha.innerHTML = `<i style="background:${item.cor}"></i><span>${item.rotulo}</span>`;
+      faixa.appendChild(linha);
     });
-    marcas.innerHTML = `<span>Lula</span><span class="zero" style="left:50%">50%</span><span>Flávio</span>`;
-    nota.textContent = "Quem teve mais votos na soma de Lula e Flávio. Perto de 50%, a cor se aproxima do branco. Cinza é célula sem dado.";
+    nota.textContent = "Classes de 5 em 5 pontos da soma de Lula e Flávio. A cor cheia vale a partir de 75%. Cinza é célula sem dado.";
     return;
   }
   if (camadaAtiva.def.tipo === "jenks") {
