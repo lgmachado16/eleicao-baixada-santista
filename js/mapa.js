@@ -44,10 +44,8 @@ function interpolar(origem, destino, t) {
 }
 
 function corDisputa(parteLula) {
-  const afastamento = Math.abs(parteLula - 0.5);
-  const intensidade = Math.min(1, afastamento / 0.25);
-  if (parteLula >= 0.5) return interpolar("#ffffff", "#cc2812", intensidade);
-  return interpolar("#ffffff", "#967311", intensidade);
+  const posicao = Math.min(1, Math.max(0, (parteLula - 0.25) / 0.5));
+  return interpolar("#967311", "#cc2812", posicao);
 }
 
 function faixasDisputa() {
@@ -333,7 +331,7 @@ function desenharLegenda() {
       linha.innerHTML = `<i style="background:${item.cor}"></i><span>${item.rotulo}</span>`;
       faixa.appendChild(linha);
     });
-    nota.textContent = "Classes de 5 em 5 pontos da soma de Lula e Flávio. A cor cheia vale a partir de 75%. Cinza é célula sem dado.";
+    nota.textContent = "Classes de 5 em 5 pontos da soma de Lula e Flávio. As duas cores se encontram no meio. A cor cheia vale a partir de 75%. Cinza é célula sem dado.";
     return;
   }
   if (camadaAtiva.def.tipo === "jenks") {
