@@ -18,10 +18,10 @@ const CAMADAS = [
   { grupo: "Eleição 2022", id: "ciro22", rotulo: "Ciro", campo: "pct_ciro_2022", tipo: "jenks" },
   { grupo: "Eleição 2022", id: "inv22", rotulo: "Inválidos", campo: "pct_invalidos_2022", tipo: "jenks" },
   { grupo: "Eleição 2022", id: "nc22", rotulo: "Não comparecimento", campo: "pct_nc_2022", tipo: "jenks" },
-  { grupo: "Comparação 2026x2022", id: "difLula", rotulo: "Lula", campo: "dif_lula", tipo: "div" },
-  { grupo: "Comparação 2026x2022", id: "difBolsonaro", rotulo: "Bolsonaro / Flávio", campo: "dif_bolsonaro", tipo: "div" },
-  { grupo: "Comparação 2026x2022", id: "difInv", rotulo: "Inválidos", campo: "dif_invalidos", tipo: "div" },
-  { grupo: "Comparação 2026x2022", id: "difNc", rotulo: "Não comparecimento", campo: "dif_nc", tipo: "div" },
+  { grupo: "Comparação 2026x2022", id: "difLula", rotulo: "Lula", campo: "var_lula", tipo: "div" },
+  { grupo: "Comparação 2026x2022", id: "difBolsonaro", rotulo: "Bolsonaro / Flávio", campo: "var_bolsonaro", tipo: "div" },
+  { grupo: "Comparação 2026x2022", id: "difInv", rotulo: "Inválidos", campo: "var_invalidos", tipo: "div" },
+  { grupo: "Comparação 2026x2022", id: "difNc", rotulo: "Não comparecimento", campo: "var_nc", tipo: "div" },
 ];
 
 function hexParaRgb(hex) {
@@ -211,8 +211,8 @@ function prepararCamada(camada, features) {
 }
 
 function prepararComparacoes() {
-  const minimo = -1000;
-  const maximo = 1000;
+  const minimo = -1;
+  const maximo = 1;
   CAMADAS.filter((camada) => camada.tipo === "div").forEach((camada) => {
     camada.def = { tipo: "div", min: minimo, max: maximo, compartilhada: true };
     camada.cores = ESPECTRAL.slice();
@@ -235,15 +235,6 @@ function indice(valor, camada) {
   const limitado = Math.min(escala.max - escala.passo / 2, Math.max(escala.min, numero));
   const posicao = Math.floor((limitado - escala.min) / escala.passo);
   return Math.max(0, Math.min(camada.cores.length - 1, posicao));
-}
-
-function formatarVotos(valor) {
-  if (!numeroValido(valor)) return "sem dado";
-  const numero = Math.round(Number(valor));
-  const texto = Math.abs(numero).toLocaleString("pt-BR");
-  if (numero > 0) return `+${texto}`;
-  if (numero < 0) return `−${texto}`;
-  return "0";
 }
 
 function formatarPercentual(valor) {
@@ -297,7 +288,7 @@ function textoCamada(camada, propriedades) {
     const parcela = numero > 0.5 ? numero : 1 - numero;
     return `${camada.rotulo}: ${vencedor} com ${formatarPercentual(parcela)} da soma`;
   }
-  if (camada.tipo === "div") return `${camada.rotulo}: ${formatarVotos(propriedades[camada.campo])} votos`;
+  if (camada.tipo === "div") return `${camada.rotulo}: ${formatarPercentual(propriedades[camada.campo])}`;
   return `${camada.rotulo}: ${formatarPercentual(propriedades[camada.campo])}`;
 }
 
@@ -365,8 +356,8 @@ function desenharLegenda() {
     const escala = camadaAtiva.def;
     faixa.style.background = `linear-gradient(to right, ${ESPECTRAL.join(", ")})`;
     const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
-    marcas.innerHTML = `<span>${formatarVotos(escala.min)}</span><span class="zero" style="left:${zero}%">0</span><span>${formatarVotos(escala.max)}</span>`;
-    nota.textContent = "Diferença de votos, 2026 menos 2022. Escala contínua e comum, de −1.000 a +1.000 votos. A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento. Cinza é célula sem dado.";
+    marcas.innerHTML = `<span>${formatarPercentual(escala.min)}</span><span class="zero" style="left:${zero}%">0%</span><span>${formatarPercentual(escala.max)}</span>`;
+    nota.textContent = "Variação percentual dos votos absolutos em relação a 2022. Escala contínua de −100% a +100%. A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento. Cinza é célula sem dado.";
     return;
   }
 }
