@@ -171,8 +171,8 @@ function coresSequenciais(quantidade) {
 }
 
 const ESPECTRAL = [
-  "#9e0142", "#d53e4f", "#f46d43", "#fdae61", "#fee08b", "#ffffbf",
-  "#e6f598", "#abdda4", "#66c2a5", "#3288bd", "#5e4fa2",
+  "#5e4fa2", "#3288bd", "#66c2a5", "#abdda4", "#e6f598", "#ffffbf",
+  "#fee08b", "#fdae61", "#f46d43", "#d53e4f", "#9e0142",
 ];
 
 function corEspectral(valor, minimo, maximo) {
@@ -356,7 +356,7 @@ function desenharLegenda() {
     faixa.style.background = `linear-gradient(to right, ${ESPECTRAL.join(", ")})`;
     const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
     marcas.innerHTML = `<span>${formatarPercentual(escala.min)}</span><span class="zero" style="left:${zero}%">0%</span><span>${formatarPercentual(escala.max)}</span>`;
-    nota.textContent = "Mesma escala Spectral, contínua, de −10% a +10%. A cor mais forte vale a partir de 10%, para mais ou para menos. Vermelho é redução e azul é crescimento. Cinza é célula sem dado.";
+    nota.textContent = "Mesma escala Spectral, contínua, de −10% a +10%. A cor mais forte vale a partir de 10%, para mais ou para menos. Azul é redução e vermelho é crescimento. Cinza é célula sem dado.";
     return;
   }
 }
