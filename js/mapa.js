@@ -3,6 +3,7 @@ const CLASSES_NATURAIS = 5;
 const CLASSES_PRINCIPAIS = 6;
 
 const CAMADAS = [
+  { grupo: "Eleição 2026", id: "disputa26", rotulo: "Lula x Flávio", campo: "parte_lula_2026", tipo: "disputa" },
   { grupo: "Eleição 2026", id: "lula26", rotulo: "Lula", campo: "pct_lula_2026", tipo: "jenks", escala: "principais" },
   { grupo: "Eleição 2026", id: "flavio26", rotulo: "Flávio Bolsonaro", campo: "pct_flavio_2026", tipo: "jenks", escala: "principais" },
   { grupo: "Eleição 2026", id: "cury26", rotulo: "Augusto Cury", campo: "pct_cury_2026", tipo: "jenks" },
@@ -41,6 +42,18 @@ function interpolar(origem, destino, t) {
     a[2] + (b[2] - a[2]) * peso,
   );
 }
+
+function corDisputa(parteLula) {
+  if (parteLula >= 0.5) return interpolar("#ffffff", "#cc2812", (parteLula - 0.5) / 0.5);
+  return interpolar("#ffffff", "#967311", (0.5 - parteLula) / 0.5);
+}
+
+function coresDisputa(quantidade = 41) {
+  return Array.from({ length: quantidade }, (_, i) => corDisputa(1 - i / (quantidade - 1)));
+}
+
+CAMADAS[0].def = { tipo: "disputa", min: 0, max: 1 };
+CAMADAS[0].cores = coresDisputa();
 
 function numeroValido(valor) {
   return valor !== null && valor !== undefined && Number.isFinite(Number(valor));
@@ -221,9 +234,16 @@ let camadaAtiva = CAMADAS[0];
 let grade;
 
 function estilo(feature, destaque = false) {
-  const i = camadaAtiva.cores ? indice(feature.properties[camadaAtiva.campo], camadaAtiva) : null;
+  let fillColor = "#d9d9d9";
+  if (camadaAtiva.tipo === "disputa") {
+    const parte = feature.properties[camadaAtiva.campo];
+    if (numeroValido(parte)) fillColor = corDisputa(Number(parte));
+  } else if (camadaAtiva.cores) {
+    const i = indice(feature.properties[camadaAtiva.campo], camadaAtiva);
+    if (i !== null) fillColor = camadaAtiva.cores[i];
+  }
   return {
-    fillColor: i === null ? "#d9d9d9" : camadaAtiva.cores[i],
+    fillColor,
     color: "#1c1917",
     weight: destaque ? 2 : 0,
     opacity: destaque ? 1 : 0,
@@ -232,12 +252,25 @@ function estilo(feature, destaque = false) {
   };
 }
 
+function textoCamada(camada, propriedades) {
+  if (camada.tipo === "disputa") {
+    const parte = propriedades[camada.campo];
+    if (!numeroValido(parte)) return `${camada.rotulo}: sem dado`;
+    const numero = Number(parte);
+    if (Math.abs(numero - 0.5) < 1e-9) return `${camada.rotulo}: empate na soma`;
+    const vencedor = numero > 0.5 ? "Lula" : "Flávio";
+    const parcela = numero > 0.5 ? numero : 1 - numero;
+    return `${camada.rotulo}: ${vencedor} com ${formatarPercentual(parcela)} da soma`;
+  }
+  return `${camada.rotulo}: ${formatarPercentual(propriedades[camada.campo])}`;
+}
+
 function popup(feature) {
   const p = feature.properties;
   const linhas = CAMADAS
     .filter((camada) => camada.grupo === camadaAtiva.grupo)
     .map((camada) => {
-      const texto = `${camada.rotulo}: ${formatarPercentual(p[camada.campo])}`;
+      const texto = textoCamada(camada, p);
       return camada.id === camadaAtiva.id ? `<strong>${texto}</strong>` : texto;
     })
     .join("<br>");
@@ -255,6 +288,16 @@ function desenharLegenda() {
   titulo.textContent = `${camadaAtiva.grupo}: ${camadaAtiva.rotulo}`;
   if (!camadaAtiva.cores) {
     nota.textContent = "Cinza é célula sem dado.";
+    return;
+  }
+  if (camadaAtiva.def.tipo === "disputa") {
+    camadaAtiva.cores.forEach((cor) => {
+      const parte = document.createElement("span");
+      parte.style.background = cor;
+      faixa.appendChild(parte);
+    });
+    marcas.innerHTML = `<span>Lula</span><span class="zero" style="left:50%">50%</span><span>Flávio</span>`;
+    nota.textContent = "Quem teve mais votos na soma de Lula e Flávio. Perto de 50%, a cor se aproxima do branco. Cinza é célula sem dado.";
     return;
   }
   if (camadaAtiva.def.tipo === "jenks") {
@@ -323,6 +366,16 @@ fetch("dados/grade.geojson")
   .then((resposta) => resposta.json())
   .then((dados) => {
     prepararCamadas(dados.features);
+    dados.features.forEach((feature) => {
+      const p = feature.properties;
+      const lula = Number(p.pct_lula_2026);
+      const flavio = Number(p.pct_flavio_2026);
+      if (!numeroValido(lula) || !numeroValido(flavio) || lula + flavio <= 0) {
+        p.parte_lula_2026 = null;
+        return;
+      }
+      p.parte_lula_2026 = lula / (lula + flavio);
+    });
     grade = L.geoJSON(dados, {
       style: estilo,
       onEachFeature(feature, layer) {
