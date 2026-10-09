@@ -1,4 +1,4 @@
-const OPACIDADE = 0.4;
+const OPACIDADE = 0.8;
 const CLASSES_NATURAIS = 5;
 const CLASSES_PRINCIPAIS = 6;
 
@@ -162,19 +162,19 @@ function prepararCamada(camada, features) {
     camada.cores = coresSequenciais(quebras.length - 1);
     return;
   }
-  let minimo = Math.floor(Math.min(...valores) * 100 + 1e-6) / 100;
-  let maximo = Math.ceil(Math.max(...valores) * 100 - 1e-6) / 100;
-  if (minimo > 0) minimo = 0;
-  if (maximo < 0) maximo = 0;
-  if (minimo === maximo) maximo = minimo + 0.01;
-  const passo = 0.01;
+  const passo = 0.005;
+  const encaixe = (valor, direcao) => {
+    const indicePasso = direcao < 0 ? Math.floor(valor / passo + 1e-8) : Math.ceil(valor / passo - 1e-8);
+    return Math.round(indicePasso * passo * 1000) / 1000;
+  };
+  let minimo = encaixe(Math.min(percentil(valores, 0.05), 0), -1);
+  let maximo = encaixe(Math.max(percentil(valores, 0.95), 0), 1);
+  if (minimo === maximo) maximo = Math.round((minimo + passo) * 1000) / 1000;
   const quantidade = Math.round((maximo - minimo) / passo);
-  const perdaPlena = Math.min(percentil(valores, 0.05), -passo);
-  const ganhoPleno = Math.max(percentil(valores, 0.95), passo);
-  camada.def = { tipo: "div", min: minimo, max: maximo, passo, perdaPlena, ganhoPleno };
+  camada.def = { tipo: "div", min: minimo, max: maximo, passo };
   camada.cores = Array.from({ length: quantidade }, (_, i) => {
     const meio = minimo + (i + 0.5) * passo;
-    return corDivergente(meio, perdaPlena, ganhoPleno);
+    return corDivergente(meio, minimo, maximo);
   });
 }
 
@@ -265,7 +265,7 @@ function desenharLegenda() {
   const escala = camadaAtiva.def;
   const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
   marcas.innerHTML = `<span>${formatarPercentual(escala.min)}</span><span class="zero" style="left:${zero}%">0%</span><span>${formatarPercentual(escala.max)}</span>`;
-  nota.textContent = "Classes de 1 em 1 ponto. Vermelho é perda e azul é ganho. Cinza é célula sem dado.";
+  nota.textContent = "Classes de 0,5 em 0,5 ponto. Vermelho é perda e azul é ganho. Cinza é célula sem dado.";
 }
 
 function aplicarCamada(id) {
