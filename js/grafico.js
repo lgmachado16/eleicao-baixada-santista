@@ -7,8 +7,8 @@ const FAIXAS = [
   { rotulo: "acima de 5.000", minimo: 5000, maximo: Infinity },
 ];
 
-const COR_PERDA = "#5e4fa2";
-const COR_GANHO = "#9e0142";
+const COR_PERDA = "#cc2812";
+const COR_GANHO = "#1a9850";
 
 function indiceFaixa(renda) {
   const indice = FAIXAS.findIndex((faixa) => renda <= faixa.maximo);
