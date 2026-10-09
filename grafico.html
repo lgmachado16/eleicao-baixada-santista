@@ -3,19 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lula e renda mediana</title>
-  <link rel="stylesheet" href="css/estilo.css?v=5">
+  <title>Renda e variação</title>
+  <link rel="stylesheet" href="css/estilo.css?v=6">
 </head>
 <body class="grafico">
   <nav class="topo">
-    <h1>Variação de Lula e renda mediana</h1>
+    <h1>Renda e variação de Lula e de Flávio/Bolsonaro</h1>
     <a href="index.html">Mapa</a>
   </nav>
-  <p class="nota">Cada ponto é uma célula com voto em 2022 e em 2026. A renda é a mediana do responsável nos setores de 2026. A reta é a tendência do município.</p>
+  <p class="nota">Cada coluna conta células da grade hexagonal com voto em 2022 e em 2026. A renda é a mediana do responsável nos setores de 2026. Perda é comparação negativa e ganho é comparação positiva. Empate em zero não entra nas colunas.</p>
+  <h2>Lula</h2>
   <div class="quadro">
-    <canvas id="grafico"></canvas>
+    <canvas id="grafico-lula"></canvas>
+  </div>
+  <h2>Flávio/Bolsonaro</h2>
+  <div class="quadro">
+    <canvas id="grafico-bolsonaro"></canvas>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
-  <script src="js/grafico.js?v=10"></script>
+  <script src="js/grafico.js?v=11"></script>
 </body>
 </html>

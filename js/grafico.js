@@ -1,98 +1,79 @@
-const PALETA = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#a65628", "#f781bf", "#666666", "#1b9e77"];
+const FAIXAS = [
+  { rotulo: "até 1.000", minimo: 0, maximo: 1000 },
+  { rotulo: "1.000 a 1.500", minimo: 1000, maximo: 1500 },
+  { rotulo: "1.500 a 2.000", minimo: 1500, maximo: 2000 },
+  { rotulo: "2.000 a 3.000", minimo: 2000, maximo: 3000 },
+  { rotulo: "3.000 a 5.000", minimo: 3000, maximo: 5000 },
+  { rotulo: "acima de 5.000", minimo: 5000, maximo: Infinity },
+];
 
-function reta(pontos) {
-  const n = pontos.length;
-  if (n < 2) return null;
-  let sx = 0;
-  let sy = 0;
-  let sxx = 0;
-  let sxy = 0;
-  pontos.forEach((ponto) => {
-    sx += ponto.x;
-    sy += ponto.y;
-    sxx += ponto.x * ponto.x;
-    sxy += ponto.x * ponto.y;
+const COR_PERDA = "#5e4fa2";
+const COR_GANHO = "#9e0142";
+
+function indiceFaixa(renda) {
+  const indice = FAIXAS.findIndex((faixa) => renda <= faixa.maximo);
+  return indice === -1 ? FAIXAS.length - 1 : indice;
+}
+
+function contar(features, campo) {
+  const perdeu = FAIXAS.map(() => 0);
+  const ganhou = FAIXAS.map(() => 0);
+  features.forEach((feature) => {
+    const p = feature.properties;
+    const renda = p.renda_mediana;
+    const variacao = p[campo];
+    if (renda === null || renda === undefined || variacao === null || variacao === undefined) return;
+    const indice = indiceFaixa(Number(renda));
+    if (indice < 0) return;
+    const valor = Number(variacao);
+    if (valor < 0) perdeu[indice] += 1;
+    else if (valor > 0) ganhou[indice] += 1;
   });
-  const denominador = n * sxx - sx * sx;
-  if (denominador === 0) return null;
-  const inclinacao = (n * sxy - sx * sy) / denominador;
-  const intercepto = (sy - inclinacao * sx) / n;
-  const xs = pontos.map((ponto) => ponto.x);
-  const minimo = Math.min(...xs);
-  const maximo = Math.max(...xs);
-  return [
-    { x: minimo, y: inclinacao * minimo + intercepto },
-    { x: maximo, y: inclinacao * maximo + intercepto },
-  ];
+  return { perdeu, ganhou };
+}
+
+function desenhar(canvas, contagem, maximo) {
+  new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels: FAIXAS.map((faixa) => faixa.rotulo),
+      datasets: [
+        { label: "Perdeu", data: contagem.perdeu, backgroundColor: COR_PERDA },
+        { label: "Ganhou", data: contagem.ganhou, backgroundColor: COR_GANHO },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      color: "#1c1917",
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label(contexto) {
+              return `${contexto.dataset.label}: ${contexto.raw} células`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: { title: { display: true, text: "Renda mediana do responsável (R$)" } },
+        y: {
+          beginAtZero: true,
+          max: maximo,
+          title: { display: true, text: "Quantidade de células" },
+          ticks: { precision: 0 },
+        },
+      },
+    },
+  });
 }
 
 fetch("dados/grade.geojson?v=10")
   .then((resposta) => resposta.json())
   .then((dados) => {
-    const porMunicipio = new Map();
-    dados.features.forEach((feature) => {
-      const p = feature.properties;
-      if (p.dif_pct_lula === null || p.renda_mediana === null || !p.nm_mun) return;
-      const lista = porMunicipio.get(p.nm_mun) || [];
-      lista.push({ x: Number(p.renda_mediana), y: Number(p.dif_pct_lula) * 100 });
-      porMunicipio.set(p.nm_mun, lista);
-    });
-    const nomes = [...porMunicipio.keys()].sort((a, b) => a.localeCompare(b, "pt-BR"));
-    const series = nomes.flatMap((nome, indice) => {
-      const cor = PALETA[indice % PALETA.length];
-      const pontos = porMunicipio.get(nome);
-      const linha = reta(pontos);
-      const saida = [{
-        label: nome,
-        data: pontos,
-        backgroundColor: cor,
-        pointRadius: 4,
-        showLine: false,
-      }];
-      if (linha) {
-        saida.push({
-          label: `${nome} tendência`,
-          data: linha,
-          borderColor: cor,
-          borderWidth: 2,
-          pointRadius: 0,
-          showLine: true,
-          tension: 0,
-        });
-      }
-      return saida;
-    });
-    const grafico = document.getElementById("grafico");
-    new Chart(grafico, {
-      type: "scatter",
-      data: { datasets: series },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        color: "#1c1917",
-        plugins: {
-          legend: {
-            labels: {
-              filter: (item) => !String(item.text).includes("tendência"),
-            },
-          },
-          tooltip: {
-            callbacks: {
-              label(contexto) {
-                const ponto = contexto.raw;
-                return `${contexto.dataset.label}: renda ${ponto.x.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}, variação ${ponto.y.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} p.p.`;
-              },
-            },
-          },
-        },
-        scales: {
-          x: {
-            title: { display: true, text: "Renda mediana do responsável (R$)" },
-          },
-          y: {
-            title: { display: true, text: "Variação de Lula, 2026 menos 2022 (pontos percentuais)" },
-          },
-        },
-      },
-    });
+    const lula = contar(dados.features, "dif_pct_lula");
+    const bolsonaro = contar(dados.features, "dif_pct_bolsonaro");
+    const maximo = Math.max(...lula.perdeu, ...lula.ganhou, ...bolsonaro.perdeu, ...bolsonaro.ganhou);
+    desenhar(document.getElementById("grafico-lula"), lula, maximo);
+    desenhar(document.getElementById("grafico-bolsonaro"), bolsonaro, maximo);
   });
