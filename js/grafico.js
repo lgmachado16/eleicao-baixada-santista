@@ -184,6 +184,102 @@ function seriesVariacao(contagem) {
   ];
 }
 
+function saldoPorFaixa(features, campoDif, campoBase) {
+  const saldo = faixas.map(() => 0);
+  const base = faixas.map(() => 0);
+  features.forEach((feature) => {
+    const p = feature.properties;
+    if (!numeroValido(p.renda_mediana) || !numeroValido(p[campoDif]) || !numeroValido(p[campoBase])) return;
+    const indice = indiceFaixa(Number(p.renda_mediana));
+    saldo[indice] += Number(p[campoDif]);
+    base[indice] += Number(p[campoBase]);
+  });
+  return {
+    absoluto: saldo.map((valor) => Math.round(valor)),
+    percentual: saldo.map((valor, indice) => (
+      base[indice] > 0 ? Math.round((valor / base[indice]) * 1000) / 10 : null
+    )),
+  };
+}
+
+function limitesEixo(series) {
+  const numeros = series.flat().filter((valor) => numeroValido(valor)).map(Number);
+  const minimo = Math.min(0, ...numeros);
+  const maximo = Math.max(0, ...numeros);
+  return { min: minimo, max: maximo === minimo ? minimo + 1 : maximo };
+}
+
+function desenharSaldo(canvas, saldo, eixoVotos, eixoPercentual) {
+  new Chart(canvas, {
+    data: {
+      labels: faixas.map((faixa) => faixa.rotulo),
+      datasets: [
+        {
+          type: "bar",
+          label: "Saldo em votos",
+          data: saldo.absoluto,
+          backgroundColor: saldo.absoluto.map((valor) => (valor < 0 ? COR_PERDA : COR_GANHO)),
+          yAxisID: "y",
+        },
+        {
+          type: "line",
+          label: "Saldo percentual",
+          data: saldo.percentual,
+          borderColor: COR_TOTAL,
+          backgroundColor: COR_TOTAL,
+          pointRadius: 3,
+          tension: 0,
+          yAxisID: "y1",
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      color: "#1c1917",
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label(contexto) {
+              const valor = Number(contexto.raw);
+              if (contexto.dataset.yAxisID === "y1") {
+                return `${contexto.dataset.label}: ${valor.toLocaleString("pt-BR")}%`;
+              }
+              return `${contexto.dataset.label}: ${valor.toLocaleString("pt-BR")} votos`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: { title: { display: true, text: "Renda mediana do responsável (R$)" } },
+        y: {
+          position: "left",
+          min: eixoVotos.min,
+          max: eixoVotos.max,
+          title: { display: true, text: "Saldo de votos (2026 − 2022)" },
+          ticks: {
+            callback(valor) {
+              return Number(valor).toLocaleString("pt-BR");
+            },
+          },
+        },
+        y1: {
+          position: "right",
+          min: eixoPercentual.min,
+          max: eixoPercentual.max,
+          grid: { drawOnChartArea: false },
+          title: { display: true, text: "Saldo em relação a 2022 (%)" },
+          ticks: {
+            callback(valor) {
+              return `${Number(valor).toLocaleString("pt-BR")}%`;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
 function parcela(votos) {
   const soma = votos.reduce((acumulado, valor) => acumulado + valor, 0);
   if (soma <= 0) return votos.map(() => 0);
@@ -254,20 +350,17 @@ fetch("dados/grade.geojson?v=13")
     desenhar(document.getElementById("grafico-invalidos"), seriesVariacao(invalidos), maximoCelulas, "Quantidade de células", "células");
     desenhar(document.getElementById("grafico-nc"), seriesVariacao(nc), maximoCelulas, "Quantidade de células", "células");
 
-    const lulaVotos = somarDiferenca(features, "dif_lula");
-    const bolsonaroVotos = somarDiferenca(features, "dif_bolsonaro");
-    const invalidosVotos = somarDiferenca(features, "dif_invalidos");
-    const ncVotos = somarDiferenca(features, "dif_nc");
-    const maximoDiferenca = maximoDe([
-      lulaVotos.perdeu, lulaVotos.ganhou,
-      bolsonaroVotos.perdeu, bolsonaroVotos.ganhou,
-      invalidosVotos.perdeu, invalidosVotos.ganhou,
-      ncVotos.perdeu, ncVotos.ganhou,
-    ]);
-    desenhar(document.getElementById("grafico-lula-votos"), seriesVariacao(lulaVotos), maximoDiferenca, "Votos", "votos");
-    desenhar(document.getElementById("grafico-bolsonaro-votos"), seriesVariacao(bolsonaroVotos), maximoDiferenca, "Votos", "votos");
-    desenhar(document.getElementById("grafico-invalidos-votos"), seriesVariacao(invalidosVotos), maximoDiferenca, "Votos", "votos");
-    desenhar(document.getElementById("grafico-nc-votos"), seriesVariacao(ncVotos), maximoDiferenca, "Votos", "votos");
+    const lulaSaldo = saldoPorFaixa(features, "dif_lula", "votos_lula_2022");
+    const bolsonaroSaldo = saldoPorFaixa(features, "dif_bolsonaro", "votos_bolsonaro_2022");
+    const invalidosSaldo = saldoPorFaixa(features, "dif_invalidos", "votos_invalidos_2022");
+    const ncSaldo = saldoPorFaixa(features, "dif_nc", "votos_nc_2022");
+    const saldos = [lulaSaldo, bolsonaroSaldo, invalidosSaldo, ncSaldo];
+    const eixoVotos = limitesEixo(saldos.map((item) => item.absoluto));
+    const eixoPercentual = limitesEixo(saldos.map((item) => item.percentual));
+    desenharSaldo(document.getElementById("grafico-lula-votos"), lulaSaldo, eixoVotos, eixoPercentual);
+    desenharSaldo(document.getElementById("grafico-bolsonaro-votos"), bolsonaroSaldo, eixoVotos, eixoPercentual);
+    desenharSaldo(document.getElementById("grafico-invalidos-votos"), invalidosSaldo, eixoVotos, eixoPercentual);
+    desenharSaldo(document.getElementById("grafico-nc-votos"), ncSaldo, eixoVotos, eixoPercentual);
 
     const totais = [
       somarVotos(features, "votos_lula_2022", "pct_lula_2022"),
