@@ -471,7 +471,7 @@ montarPainel();
 montarInterruptor();
 desenharLegenda();
 
-fetch("dados/grade.geojson?v=15")
+fetch("dados/grade.geojson?v=16")
   .then((resposta) => resposta.json())
   .then((dados) => {
     prepararCamadas(dados.features);
