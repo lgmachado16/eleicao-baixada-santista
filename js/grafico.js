@@ -1,20 +1,82 @@
-const FAIXAS = [
-  { rotulo: "até 1.000", minimo: 0, maximo: 1000 },
-  { rotulo: "1.000 a 1.500", minimo: 1000, maximo: 1500 },
-  { rotulo: "1.500 a 2.000", minimo: 1500, maximo: 2000 },
-  { rotulo: "2.000 a 3.000", minimo: 2000, maximo: 3000 },
-  { rotulo: "3.000 a 5.000", minimo: 3000, maximo: 5000 },
-  { rotulo: "acima de 5.000", minimo: 5000, maximo: Infinity },
-];
+let faixas = [];
 
 const COR_PERDA = "#cc2812";
 const COR_GANHO = "#1a9850";
 const COR_2022 = "#3288bd";
 const COR_2026 = "#9a3412";
 
+function quebrasNaturais(valores, classes) {
+  const dados = valores.slice().sort((a, b) => a - b);
+  const distintos = new Set(dados).size;
+  const k = Math.max(1, Math.min(classes, distintos));
+  if (dados.length === 0) return [0, 1];
+  if (k === 1) return [dados[0], dados[dados.length - 1]];
+
+  const n = dados.length;
+  const limite = Array.from({ length: n + 1 }, () => Array(k + 1).fill(0));
+  const variancia = Array.from({ length: n + 1 }, () => Array(k + 1).fill(0));
+  for (let i = 1; i <= k; i += 1) {
+    limite[1][i] = 1;
+    variancia[1][i] = 0;
+    for (let j = 2; j <= n; j += 1) variancia[j][i] = Infinity;
+  }
+  for (let l = 2; l <= n; l += 1) {
+    let soma = 0;
+    let somaQuadrados = 0;
+    let peso = 0;
+    for (let m = 1; m <= l; m += 1) {
+      const inicio = l - m + 1;
+      const valor = dados[inicio - 1];
+      peso += 1;
+      soma += valor;
+      somaQuadrados += valor * valor;
+      const dispersao = somaQuadrados - (soma * soma) / peso;
+      const anterior = inicio - 1;
+      if (anterior !== 0) {
+        for (let j = 2; j <= k; j += 1) {
+          const candidata = dispersao + variancia[anterior][j - 1];
+          if (variancia[l][j] >= candidata) {
+            limite[l][j] = inicio;
+            variancia[l][j] = candidata;
+          }
+        }
+      }
+    }
+    limite[l][1] = 1;
+    variancia[l][1] = somaQuadrados - (soma * soma) / peso;
+  }
+
+  const quebras = Array(k + 1).fill(0);
+  quebras[k] = dados[n - 1];
+  quebras[0] = dados[0];
+  let indiceFinal = n - 1;
+  for (let classe = k; classe > 1; classe -= 1) {
+    const inicio = limite[indiceFinal][classe];
+    quebras[classe - 1] = dados[inicio - 2];
+    indiceFinal = inicio - 1;
+  }
+  return quebras;
+}
+
+function formatarReais(valor) {
+  return Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+}
+
+function montarFaixas(features) {
+  const valores = features
+    .map((feature) => feature.properties.renda_mediana)
+    .filter(numeroValido)
+    .map(Number);
+  const quebras = quebrasNaturais(valores, 5);
+  faixas = quebras.slice(0, -1).map((inicio, indice) => ({
+    rotulo: `${formatarReais(inicio)} a ${formatarReais(quebras[indice + 1])}`,
+    maximo: quebras[indice + 1],
+  }));
+}
+
 function indiceFaixa(renda) {
-  const indice = FAIXAS.findIndex((faixa) => renda <= faixa.maximo);
-  return indice === -1 ? FAIXAS.length - 1 : indice;
+  const indice = faixas.findIndex((faixa) => renda <= faixa.maximo);
+  return indice === -1 ? faixas.length - 1 : indice;
 }
 
 function numeroValido(valor) {
@@ -22,8 +84,8 @@ function numeroValido(valor) {
 }
 
 function contar(features, campo) {
-  const perdeu = FAIXAS.map(() => 0);
-  const ganhou = FAIXAS.map(() => 0);
+  const perdeu = faixas.map(() => 0);
+  const ganhou = faixas.map(() => 0);
   features.forEach((feature) => {
     const p = feature.properties;
     if (!numeroValido(p.renda_mediana) || !numeroValido(p[campo])) return;
@@ -36,8 +98,8 @@ function contar(features, campo) {
 }
 
 function somarDiferenca(features, campo) {
-  const perdeu = FAIXAS.map(() => 0);
-  const ganhou = FAIXAS.map(() => 0);
+  const perdeu = faixas.map(() => 0);
+  const ganhou = faixas.map(() => 0);
   features.forEach((feature) => {
     const p = feature.properties;
     if (!numeroValido(p.renda_mediana) || !numeroValido(p[campo])) return;
@@ -53,7 +115,7 @@ function somarDiferenca(features, campo) {
 }
 
 function somarVotos(features, campo, campoBase) {
-  const votos = FAIXAS.map(() => 0);
+  const votos = faixas.map(() => 0);
   features.forEach((feature) => {
     const p = feature.properties;
     if (!numeroValido(p.renda_mediana) || !numeroValido(p[campoBase]) || !numeroValido(p[campo])) return;
@@ -70,7 +132,7 @@ function desenhar(canvas, series, maximo, tituloY, unidade) {
   new Chart(canvas, {
     type: "bar",
     data: {
-      labels: FAIXAS.map((faixa) => faixa.rotulo),
+      labels: faixas.map((faixa) => faixa.rotulo),
       datasets: series.map((serie) => ({
         label: serie.rotulo,
         data: serie.dados,
@@ -132,7 +194,7 @@ function desenharLinha(canvas, series, maximo) {
   new Chart(canvas, {
     type: "line",
     data: {
-      labels: FAIXAS.map((faixa) => faixa.rotulo),
+      labels: faixas.map((faixa) => faixa.rotulo),
       datasets: series.map((serie) => ({
         label: serie.rotulo,
         data: serie.dados,
@@ -178,6 +240,7 @@ fetch("dados/grade.geojson?v=13")
   .then((resposta) => resposta.json())
   .then((dados) => {
     const features = dados.features;
+    montarFaixas(features);
     const lula = contar(features, "dif_pct_lula");
     const bolsonaro = contar(features, "dif_pct_bolsonaro");
     const invalidos = contar(features, "dif_pct_invalidos");
