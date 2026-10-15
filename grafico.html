@@ -4,27 +4,61 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Renda e variação</title>
-  <link rel="stylesheet" href="css/estilo.css?v=6">
+  <link rel="stylesheet" href="css/estilo.css?v=7">
 </head>
 <body class="grafico">
   <nav class="topo">
     <h1>Renda e variação de Lula, de Flávio/Bolsonaro e dos inválidos</h1>
     <a href="index.html">Mapa</a>
   </nav>
-  <p class="nota">Cada coluna conta células da grade hexagonal com voto em 2022 e em 2026. A renda é a mediana do responsável nos setores de 2026. Perda é comparação negativa e ganho é comparação positiva. Empate em zero não entra nas colunas. Os três gráficos usam a mesma escala vertical.</p>
-  <h2>Lula</h2>
+  <p class="nota">A renda é a mediana do responsável nos setores de 2026. As faixas são as mesmas em todos os gráficos.</p>
+
+  <h2>Células em que a comparação caiu ou subiu</h2>
+  <p class="nota">Cada coluna conta células com voto em 2022 e em 2026. Perda é comparação negativa e ganho é comparação positiva. Empate em zero não entra. Os três gráficos usam a mesma escala vertical.</p>
+  <h3>Lula</h3>
   <div class="quadro">
     <canvas id="grafico-lula"></canvas>
   </div>
-  <h2>Flávio/Bolsonaro</h2>
+  <h3>Flávio/Bolsonaro</h3>
   <div class="quadro">
     <canvas id="grafico-bolsonaro"></canvas>
   </div>
-  <h2>Inválidos</h2>
+  <h3>Inválidos</h3>
   <div class="quadro">
     <canvas id="grafico-invalidos"></canvas>
   </div>
+
+  <h2>Votos absolutos ganhos e perdidos</h2>
+  <p class="nota">Cada coluna soma os votos a mais ou a menos nas células da faixa. Perda é a soma das diferenças negativas e ganho é a soma das positivas. Empate em zero não entra. Os três gráficos usam a mesma escala vertical.</p>
+  <h3>Lula</h3>
+  <div class="quadro">
+    <canvas id="grafico-lula-votos"></canvas>
+  </div>
+  <h3>Flávio/Bolsonaro</h3>
+  <div class="quadro">
+    <canvas id="grafico-bolsonaro-votos"></canvas>
+  </div>
+  <h3>Inválidos</h3>
+  <div class="quadro">
+    <canvas id="grafico-invalidos-votos"></canvas>
+  </div>
+
+  <h2>Votos absolutos em cada faixa de renda</h2>
+  <p class="nota">Cada coluna soma os votos das células da faixa. Em Flávio/Bolsonaro, 2022 é Bolsonaro e 2026 é Flávio. Os três gráficos usam a mesma escala vertical.</p>
+  <h3>Lula</h3>
+  <div class="quadro">
+    <canvas id="grafico-lula-total"></canvas>
+  </div>
+  <h3>Flávio/Bolsonaro</h3>
+  <div class="quadro">
+    <canvas id="grafico-bolsonaro-total"></canvas>
+  </div>
+  <h3>Inválidos</h3>
+  <div class="quadro">
+    <canvas id="grafico-invalidos-total"></canvas>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
-  <script src="js/grafico.js?v=14"></script>
+  <script src="js/grafico.js?v=15"></script>
 </body>
 </html>

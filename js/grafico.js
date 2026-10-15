@@ -9,10 +9,16 @@ const FAIXAS = [
 
 const COR_PERDA = "#cc2812";
 const COR_GANHO = "#1a9850";
+const COR_2022 = "#3288bd";
+const COR_2026 = "#9a3412";
 
 function indiceFaixa(renda) {
   const indice = FAIXAS.findIndex((faixa) => renda <= faixa.maximo);
   return indice === -1 ? FAIXAS.length - 1 : indice;
+}
+
+function numeroValido(valor) {
+  return valor !== null && valor !== undefined && Number.isFinite(Number(valor));
 }
 
 function contar(features, campo) {
@@ -20,27 +26,56 @@ function contar(features, campo) {
   const ganhou = FAIXAS.map(() => 0);
   features.forEach((feature) => {
     const p = feature.properties;
-    const renda = p.renda_mediana;
-    const variacao = p[campo];
-    if (renda === null || renda === undefined || variacao === null || variacao === undefined) return;
-    const indice = indiceFaixa(Number(renda));
-    if (indice < 0) return;
-    const valor = Number(variacao);
+    if (!numeroValido(p.renda_mediana) || !numeroValido(p[campo])) return;
+    const indice = indiceFaixa(Number(p.renda_mediana));
+    const valor = Number(p[campo]);
     if (valor < 0) perdeu[indice] += 1;
     else if (valor > 0) ganhou[indice] += 1;
   });
   return { perdeu, ganhou };
 }
 
-function desenhar(canvas, contagem, maximo) {
+function somarDiferenca(features, campo) {
+  const perdeu = FAIXAS.map(() => 0);
+  const ganhou = FAIXAS.map(() => 0);
+  features.forEach((feature) => {
+    const p = feature.properties;
+    if (!numeroValido(p.renda_mediana) || !numeroValido(p[campo])) return;
+    const indice = indiceFaixa(Number(p.renda_mediana));
+    const valor = Number(p[campo]);
+    if (valor < 0) perdeu[indice] += -valor;
+    else if (valor > 0) ganhou[indice] += valor;
+  });
+  return {
+    perdeu: perdeu.map((valor) => Math.round(valor)),
+    ganhou: ganhou.map((valor) => Math.round(valor)),
+  };
+}
+
+function somarVotos(features, campo, campoBase) {
+  const votos = FAIXAS.map(() => 0);
+  features.forEach((feature) => {
+    const p = feature.properties;
+    if (!numeroValido(p.renda_mediana) || !numeroValido(p[campoBase]) || !numeroValido(p[campo])) return;
+    votos[indiceFaixa(Number(p.renda_mediana))] += Number(p[campo]);
+  });
+  return votos.map((valor) => Math.round(valor));
+}
+
+function maximoDe(series) {
+  return Math.max(...series.flat());
+}
+
+function desenhar(canvas, series, maximo, tituloY, unidade) {
   new Chart(canvas, {
     type: "bar",
     data: {
       labels: FAIXAS.map((faixa) => faixa.rotulo),
-      datasets: [
-        { label: "Perdeu", data: contagem.perdeu, backgroundColor: COR_PERDA },
-        { label: "Ganhou", data: contagem.ganhou, backgroundColor: COR_GANHO },
-      ],
+      datasets: series.map((serie) => ({
+        label: serie.rotulo,
+        data: serie.dados,
+        backgroundColor: serie.cor,
+      })),
     },
     options: {
       responsive: true,
@@ -50,7 +85,8 @@ function desenhar(canvas, contagem, maximo) {
         tooltip: {
           callbacks: {
             label(contexto) {
-              return `${contexto.dataset.label}: ${contexto.raw} células`;
+              const quantidade = Number(contexto.raw).toLocaleString("pt-BR");
+              return `${contexto.dataset.label}: ${quantidade} ${unidade}`;
             },
           },
         },
@@ -60,29 +96,72 @@ function desenhar(canvas, contagem, maximo) {
         y: {
           beginAtZero: true,
           max: maximo,
-          title: { display: true, text: "Quantidade de células" },
-          ticks: { precision: 0 },
+          title: { display: true, text: tituloY },
+          ticks: {
+            precision: 0,
+            callback(valor) {
+              return Number(valor).toLocaleString("pt-BR");
+            },
+          },
         },
       },
     },
   });
 }
 
+function seriesVariacao(contagem) {
+  return [
+    { rotulo: "Perdeu", dados: contagem.perdeu, cor: COR_PERDA },
+    { rotulo: "Ganhou", dados: contagem.ganhou, cor: COR_GANHO },
+  ];
+}
+
 fetch("dados/grade.geojson?v=11")
   .then((resposta) => resposta.json())
   .then((dados) => {
-    const lula = contar(dados.features, "dif_pct_lula");
-    const bolsonaro = contar(dados.features, "dif_pct_bolsonaro");
-    const invalidos = contar(dados.features, "dif_pct_invalidos");
-    const maximo = Math.max(
-      ...lula.perdeu,
-      ...lula.ganhou,
-      ...bolsonaro.perdeu,
-      ...bolsonaro.ganhou,
-      ...invalidos.perdeu,
-      ...invalidos.ganhou,
-    );
-    desenhar(document.getElementById("grafico-lula"), lula, maximo);
-    desenhar(document.getElementById("grafico-bolsonaro"), bolsonaro, maximo);
-    desenhar(document.getElementById("grafico-invalidos"), invalidos, maximo);
+    const features = dados.features;
+    const lula = contar(features, "dif_pct_lula");
+    const bolsonaro = contar(features, "dif_pct_bolsonaro");
+    const invalidos = contar(features, "dif_pct_invalidos");
+    const maximoCelulas = maximoDe([
+      lula.perdeu, lula.ganhou, bolsonaro.perdeu, bolsonaro.ganhou, invalidos.perdeu, invalidos.ganhou,
+    ]);
+    desenhar(document.getElementById("grafico-lula"), seriesVariacao(lula), maximoCelulas, "Quantidade de células", "células");
+    desenhar(document.getElementById("grafico-bolsonaro"), seriesVariacao(bolsonaro), maximoCelulas, "Quantidade de células", "células");
+    desenhar(document.getElementById("grafico-invalidos"), seriesVariacao(invalidos), maximoCelulas, "Quantidade de células", "células");
+
+    const lulaVotos = somarDiferenca(features, "dif_lula");
+    const bolsonaroVotos = somarDiferenca(features, "dif_bolsonaro");
+    const invalidosVotos = somarDiferenca(features, "dif_invalidos");
+    const maximoDiferenca = maximoDe([
+      lulaVotos.perdeu, lulaVotos.ganhou,
+      bolsonaroVotos.perdeu, bolsonaroVotos.ganhou,
+      invalidosVotos.perdeu, invalidosVotos.ganhou,
+    ]);
+    desenhar(document.getElementById("grafico-lula-votos"), seriesVariacao(lulaVotos), maximoDiferenca, "Votos", "votos");
+    desenhar(document.getElementById("grafico-bolsonaro-votos"), seriesVariacao(bolsonaroVotos), maximoDiferenca, "Votos", "votos");
+    desenhar(document.getElementById("grafico-invalidos-votos"), seriesVariacao(invalidosVotos), maximoDiferenca, "Votos", "votos");
+
+    const totais = [
+      somarVotos(features, "votos_lula_2022", "pct_lula_2022"),
+      somarVotos(features, "votos_lula_2026", "pct_lula_2026"),
+      somarVotos(features, "votos_bolsonaro_2022", "pct_bolsonaro_2022"),
+      somarVotos(features, "votos_flavio_2026", "pct_flavio_2026"),
+      somarVotos(features, "votos_invalidos_2022", "pct_invalidos_2022"),
+      somarVotos(features, "votos_invalidos_2026", "pct_invalidos_2026"),
+    ];
+    const maximoTotal = maximoDe(totais);
+    const serieAno = (rotulo, dados, cor) => ({ rotulo, dados, cor });
+    desenhar(document.getElementById("grafico-lula-total"), [
+      serieAno("2022", totais[0], COR_2022),
+      serieAno("2026", totais[1], COR_2026),
+    ], maximoTotal, "Votos", "votos");
+    desenhar(document.getElementById("grafico-bolsonaro-total"), [
+      serieAno("2022", totais[2], COR_2022),
+      serieAno("2026", totais[3], COR_2026),
+    ], maximoTotal, "Votos", "votos");
+    desenhar(document.getElementById("grafico-invalidos-total"), [
+      serieAno("2022", totais[4], COR_2022),
+      serieAno("2026", totais[5], COR_2026),
+    ], maximoTotal, "Votos", "votos");
   });
