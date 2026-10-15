@@ -109,6 +109,12 @@ function desenhar(canvas, series, maximo, tituloY, unidade) {
   });
 }
 
+const COR_TOTAL = "#1c1917";
+const COR_LULA = "#cc2812";
+const COR_ADVERSARIO = "#967311";
+const COR_INVALIDOS = "#6a51a3";
+const COR_NC = "#3288bd";
+
 function seriesVariacao(contagem) {
   return [
     { rotulo: "Perdeu", dados: contagem.perdeu, cor: COR_PERDA },
@@ -116,31 +122,89 @@ function seriesVariacao(contagem) {
   ];
 }
 
-fetch("dados/grade.geojson?v=11")
+function parcela(votos) {
+  const soma = votos.reduce((acumulado, valor) => acumulado + valor, 0);
+  if (soma <= 0) return votos.map(() => 0);
+  return votos.map((valor) => Math.round((valor / soma) * 1000) / 10);
+}
+
+function desenharLinha(canvas, series, maximo) {
+  new Chart(canvas, {
+    type: "line",
+    data: {
+      labels: FAIXAS.map((faixa) => faixa.rotulo),
+      datasets: series.map((serie) => ({
+        label: serie.rotulo,
+        data: serie.dados,
+        borderColor: serie.cor,
+        backgroundColor: serie.cor,
+        borderWidth: serie.referencia ? 3 : 2,
+        pointRadius: 3,
+        tension: 0,
+      })),
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      color: "#1c1917",
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label(contexto) {
+              const quantidade = Number(contexto.raw).toLocaleString("pt-BR");
+              return `${contexto.dataset.label}: ${quantidade}%`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: { title: { display: true, text: "Renda mediana do responsável (R$)" } },
+        y: {
+          beginAtZero: true,
+          max: maximo,
+          title: { display: true, text: "Parcela do próprio grupo (%)" },
+          ticks: {
+            callback(valor) {
+              return `${Number(valor).toLocaleString("pt-BR")}%`;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+fetch("dados/grade.geojson?v=12")
   .then((resposta) => resposta.json())
   .then((dados) => {
     const features = dados.features;
     const lula = contar(features, "dif_pct_lula");
     const bolsonaro = contar(features, "dif_pct_bolsonaro");
     const invalidos = contar(features, "dif_pct_invalidos");
+    const nc = contar(features, "dif_pct_nc");
     const maximoCelulas = maximoDe([
-      lula.perdeu, lula.ganhou, bolsonaro.perdeu, bolsonaro.ganhou, invalidos.perdeu, invalidos.ganhou,
+      lula.perdeu, lula.ganhou, bolsonaro.perdeu, bolsonaro.ganhou,
+      invalidos.perdeu, invalidos.ganhou, nc.perdeu, nc.ganhou,
     ]);
     desenhar(document.getElementById("grafico-lula"), seriesVariacao(lula), maximoCelulas, "Quantidade de células", "células");
     desenhar(document.getElementById("grafico-bolsonaro"), seriesVariacao(bolsonaro), maximoCelulas, "Quantidade de células", "células");
     desenhar(document.getElementById("grafico-invalidos"), seriesVariacao(invalidos), maximoCelulas, "Quantidade de células", "células");
+    desenhar(document.getElementById("grafico-nc"), seriesVariacao(nc), maximoCelulas, "Quantidade de células", "células");
 
     const lulaVotos = somarDiferenca(features, "dif_lula");
     const bolsonaroVotos = somarDiferenca(features, "dif_bolsonaro");
     const invalidosVotos = somarDiferenca(features, "dif_invalidos");
+    const ncVotos = somarDiferenca(features, "dif_nc");
     const maximoDiferenca = maximoDe([
       lulaVotos.perdeu, lulaVotos.ganhou,
       bolsonaroVotos.perdeu, bolsonaroVotos.ganhou,
       invalidosVotos.perdeu, invalidosVotos.ganhou,
+      ncVotos.perdeu, ncVotos.ganhou,
     ]);
     desenhar(document.getElementById("grafico-lula-votos"), seriesVariacao(lulaVotos), maximoDiferenca, "Votos", "votos");
     desenhar(document.getElementById("grafico-bolsonaro-votos"), seriesVariacao(bolsonaroVotos), maximoDiferenca, "Votos", "votos");
     desenhar(document.getElementById("grafico-invalidos-votos"), seriesVariacao(invalidosVotos), maximoDiferenca, "Votos", "votos");
+    desenhar(document.getElementById("grafico-nc-votos"), seriesVariacao(ncVotos), maximoDiferenca, "Votos", "votos");
 
     const totais = [
       somarVotos(features, "votos_lula_2022", "pct_lula_2022"),
@@ -149,6 +213,8 @@ fetch("dados/grade.geojson?v=11")
       somarVotos(features, "votos_flavio_2026", "pct_flavio_2026"),
       somarVotos(features, "votos_invalidos_2022", "pct_invalidos_2022"),
       somarVotos(features, "votos_invalidos_2026", "pct_invalidos_2026"),
+      somarVotos(features, "votos_nc_2022", "pct_nc_2022"),
+      somarVotos(features, "votos_nc_2026", "pct_nc_2026"),
     ];
     const maximoTotal = maximoDe(totais);
     const serieAno = (rotulo, dados, cor) => ({ rotulo, dados, cor });
@@ -164,4 +230,32 @@ fetch("dados/grade.geojson?v=11")
       serieAno("2022", totais[4], COR_2022),
       serieAno("2026", totais[5], COR_2026),
     ], maximoTotal, "Votos", "votos");
+    desenhar(document.getElementById("grafico-nc-total"), [
+      serieAno("2022", totais[6], COR_2022),
+      serieAno("2026", totais[7], COR_2026),
+    ], maximoTotal, "Votos", "votos");
+
+    const forma = (rotulo, votos, cor, referencia = false) => ({
+      rotulo,
+      dados: parcela(votos),
+      cor,
+      referencia,
+    });
+    const forma2026 = [
+      forma("Total de votos", somarVotos(features, "votos_totais_2026", "votos_totais_2026"), COR_TOTAL, true),
+      forma("Lula", totais[1], COR_LULA),
+      forma("Flávio", totais[3], COR_ADVERSARIO),
+      forma("Inválidos", totais[5], COR_INVALIDOS),
+      forma("Não comparecimento", totais[7], COR_NC),
+    ];
+    const forma2022 = [
+      forma("Total de votos", somarVotos(features, "votos_totais_2022", "votos_totais_2022"), COR_TOTAL, true),
+      forma("Lula", totais[0], COR_LULA),
+      forma("Bolsonaro", totais[2], COR_ADVERSARIO),
+      forma("Inválidos", totais[4], COR_INVALIDOS),
+      forma("Não comparecimento", totais[6], COR_NC),
+    ];
+    const maximoForma = maximoDe([...forma2026, ...forma2022].map((serie) => serie.dados));
+    desenharLinha(document.getElementById("grafico-forma-2026"), forma2026, maximoForma);
+    desenharLinha(document.getElementById("grafico-forma-2022"), forma2022, maximoForma);
   });

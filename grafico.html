@@ -8,13 +8,13 @@
 </head>
 <body class="grafico">
   <nav class="topo">
-    <h1>Renda e variação de Lula, de Flávio/Bolsonaro e dos inválidos</h1>
+    <h1>Renda e variação de Lula, de Flávio/Bolsonaro, dos inválidos e do não comparecimento</h1>
     <a href="index.html">Mapa</a>
   </nav>
   <p class="nota">A renda é a mediana do responsável nos setores de 2026. As faixas são as mesmas em todos os gráficos.</p>
 
   <h2>Células em que a comparação caiu ou subiu</h2>
-  <p class="nota">Cada coluna conta células com voto em 2022 e em 2026. Perda é comparação negativa e ganho é comparação positiva. Empate em zero não entra. Os três gráficos usam a mesma escala vertical.</p>
+  <p class="nota">Cada coluna conta células com voto em 2022 e em 2026. Perda é comparação negativa e ganho é comparação positiva. Empate em zero não entra. Os quatro gráficos usam a mesma escala vertical.</p>
   <h3>Lula</h3>
   <div class="quadro">
     <canvas id="grafico-lula"></canvas>
@@ -27,9 +27,13 @@
   <div class="quadro">
     <canvas id="grafico-invalidos"></canvas>
   </div>
+  <h3>Não comparecimento</h3>
+  <div class="quadro">
+    <canvas id="grafico-nc"></canvas>
+  </div>
 
   <h2>Votos absolutos ganhos e perdidos</h2>
-  <p class="nota">Cada coluna soma os votos a mais ou a menos nas células da faixa. Perda é a soma das diferenças negativas e ganho é a soma das positivas. Empate em zero não entra. Os três gráficos usam a mesma escala vertical.</p>
+  <p class="nota">Cada coluna soma os votos a mais ou a menos nas células da faixa. Perda é a soma das diferenças negativas e ganho é a soma das positivas. Empate em zero não entra. Os quatro gráficos usam a mesma escala vertical.</p>
   <h3>Lula</h3>
   <div class="quadro">
     <canvas id="grafico-lula-votos"></canvas>
@@ -42,9 +46,13 @@
   <div class="quadro">
     <canvas id="grafico-invalidos-votos"></canvas>
   </div>
+  <h3>Não comparecimento</h3>
+  <div class="quadro">
+    <canvas id="grafico-nc-votos"></canvas>
+  </div>
 
   <h2>Votos absolutos em cada faixa de renda</h2>
-  <p class="nota">Cada coluna soma os votos das células da faixa. Em Flávio/Bolsonaro, 2022 é Bolsonaro e 2026 é Flávio. Os três gráficos usam a mesma escala vertical.</p>
+  <p class="nota">Cada coluna soma os votos das células da faixa. Em Flávio/Bolsonaro, 2022 é Bolsonaro e 2026 é Flávio. Os quatro gráficos usam a mesma escala vertical.</p>
   <h3>Lula</h3>
   <div class="quadro">
     <canvas id="grafico-lula-total"></canvas>
@@ -57,8 +65,23 @@
   <div class="quadro">
     <canvas id="grafico-invalidos-total"></canvas>
   </div>
+  <h3>Não comparecimento</h3>
+  <div class="quadro">
+    <canvas id="grafico-nc-total"></canvas>
+  </div>
+
+  <h2>Forma da distribuição por faixa de renda</h2>
+  <p class="nota">Cada linha é a parcela dos votos daquele grupo em cada faixa, e por isso soma 100%. A linha preta é a distribuição de todos os votos. Onde outra linha fica acima dela, o grupo está mais presente nessa faixa do que o conjunto dos votos. O não comparecimento entra na comparação e não compõe o total.</p>
+  <h3>2026</h3>
+  <div class="quadro">
+    <canvas id="grafico-forma-2026"></canvas>
+  </div>
+  <h3>2022</h3>
+  <div class="quadro">
+    <canvas id="grafico-forma-2022"></canvas>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
-  <script src="js/grafico.js?v=15"></script>
+  <script src="js/grafico.js?v=16"></script>
 </body>
 </html>
