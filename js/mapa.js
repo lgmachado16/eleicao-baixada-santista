@@ -22,6 +22,7 @@ const CAMADAS = [
   { grupo: "Comparação 2026x2022", id: "difBolsonaro", rotulo: "Bolsonaro / Flávio", campo: "dif_pct_bolsonaro", tipo: "div" },
   { grupo: "Comparação 2026x2022", id: "difInv", rotulo: "Inválidos", campo: "dif_pct_invalidos", tipo: "div" },
   { grupo: "Comparação 2026x2022", id: "difNc", rotulo: "Não comparecimento", campo: "dif_pct_nc", tipo: "div" },
+  { grupo: "Rendimento", id: "renda", rotulo: "Nominal mediano", campo: "renda_mediana", tipo: "reais" },
 ];
 
 function hexParaRgb(hex) {
@@ -213,6 +214,12 @@ function prepararEscalas(features, campoDe, destino) {
 function prepararCamadas(features) {
   prepararEscalas(features, (camada) => camada.campo, { def: "def", cores: "cores" });
   prepararEscalas(features, (camada) => camada.campoAbsoluto, { def: "defAbsoluto", cores: "coresAbsoluto" });
+  CAMADAS.filter((camada) => camada.tipo === "reais").forEach((camada) => {
+    const valores = valoresDaCamada(features, camada.campo, camada.campo);
+    const quebras = quebrasNaturais(valores, CLASSES_NATURAIS);
+    camada.def = { tipo: "reais", quebras, compartilhada: false };
+    camada.cores = coresSequenciais(quebras.length - 1);
+  });
   prepararComparacoes();
 }
 
@@ -228,7 +235,7 @@ function prepararComparacoes() {
 function indice(valor, atual) {
   if (!numeroValido(valor)) return null;
   const numero = Number(valor);
-  if (atual.def.tipo === "jenks") {
+  if (atual.def.tipo === "jenks" || atual.def.tipo === "reais") {
     const quebras = atual.def.quebras;
     const ultima = quebras.length - 2;
     for (let i = 0; i < ultima; i += 1) {
@@ -302,7 +309,7 @@ function estilo(feature, destaque = false) {
       fillColor = corEspectral(Number(valor), camadaAtiva.def.min, camadaAtiva.def.max);
       temDado = true;
     }
-  } else if (camadaAtiva.tipo === "jenks") {
+  } else if (camadaAtiva.tipo === "jenks" || camadaAtiva.tipo === "reais") {
     const atual = vista(camadaAtiva);
     if (atual.def && atual.cores) {
       const i = indice(valorVisivel(feature.properties, camadaAtiva), atual);
@@ -334,6 +341,7 @@ function textoCamada(camada, propriedades) {
     return `${camada.rotulo}: ${vencedor} com ${formatarPercentual(parcela)} da soma`;
   }
   if (camada.tipo === "div") return `${camada.rotulo}: ${formatarPercentual(propriedades[camada.campo])}`;
+  if (camada.tipo === "reais") return `${camada.rotulo}: ${formatarRenda(propriedades[camada.campo])}`;
   const valor = valorVisivel(propriedades, camada);
   const texto = vista(camada).absoluto ? formatarVotos(valor) : formatarPercentual(valor);
   return `${camada.rotulo}: ${texto}`;
@@ -348,7 +356,8 @@ function popup(feature) {
       return camada.id === camadaAtiva.id ? `<strong>${texto}</strong>` : texto;
     })
     .join("<br>");
-  return `<strong>${camadaAtiva.grupo}</strong><br>${linhas}<br>${p.nm_mun || "sem município"}<br>Renda mediana: ${formatarRenda(p.renda_mediana)}`;
+  const renda = camadaAtiva.tipo === "reais" ? "" : `<br>Renda mediana: ${formatarRenda(p.renda_mediana)}`;
+  return `<strong>${camadaAtiva.grupo}</strong><br>${linhas}<br>${p.nm_mun || "sem município"}${renda}`;
 }
 
 function desenharLegenda() {
@@ -385,9 +394,11 @@ function desenharLegenda() {
     nota.textContent = `Escala de 5 em 5 pontos até 75% da soma. À esquerda, Lula; à direita, ${adversario}. As cores se encontram no meio.`;
     return;
   }
-  if (camadaAtiva.def && camadaAtiva.def.tipo === "jenks") {
+  if (camadaAtiva.def && (camadaAtiva.def.tipo === "jenks" || camadaAtiva.def.tipo === "reais")) {
     const atual = vista(camadaAtiva);
-    const formatar = atual.absoluto ? formatarVotos : formatarPercentual;
+    const formatar = camadaAtiva.def.tipo === "reais"
+      ? formatarRenda
+      : (atual.absoluto ? formatarVotos : formatarPercentual);
     faixa.classList.add("lista");
     const quebras = atual.def.quebras;
     atual.cores.forEach((cor, i) => {
@@ -396,6 +407,10 @@ function desenharLegenda() {
       item.innerHTML = `<i style="background:${cor}"></i><span>${formatar(quebras[i])} a ${formatar(quebras[i + 1])}</span>`;
       faixa.appendChild(item);
     });
+    if (camadaAtiva.def.tipo === "reais") {
+      nota.textContent = "Mediana, em cada célula, do rendimento nominal mediano mensal da pessoa responsável nos setores cujo centroide cai na célula.";
+      return;
+    }
     const unidade = atual.absoluto ? " A escala está em votos." : "";
     nota.textContent = atual.def.compartilhada
       ? `Mesma escala de Lula e Bolsonaro, nos dois anos.${unidade}`
@@ -456,7 +471,7 @@ montarPainel();
 montarInterruptor();
 desenharLegenda();
 
-fetch("dados/grade.geojson?v=12")
+fetch("dados/grade.geojson?v=13")
   .then((resposta) => resposta.json())
   .then((dados) => {
     prepararCamadas(dados.features);

@@ -174,7 +174,7 @@ function desenharLinha(canvas, series, maximo) {
   });
 }
 
-fetch("dados/grade.geojson?v=12")
+fetch("dados/grade.geojson?v=13")
   .then((resposta) => resposta.json())
   .then((dados) => {
     const features = dados.features;
