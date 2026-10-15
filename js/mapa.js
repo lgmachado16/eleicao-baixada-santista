@@ -224,8 +224,8 @@ function prepararCamadas(features) {
 }
 
 function prepararComparacoes() {
-  const minimo = -0.1;
-  const maximo = 0.1;
+  const minimo = -0.5;
+  const maximo = 0.5;
   CAMADAS.filter((camada) => camada.tipo === "div").forEach((camada) => {
     camada.def = { tipo: "div", min: minimo, max: maximo, compartilhada: true };
     camada.cores = ESPECTRAL.slice();
@@ -422,7 +422,7 @@ function desenharLegenda() {
     faixa.style.background = `linear-gradient(to right, ${ESPECTRAL.join(", ")})`;
     const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
     marcas.innerHTML = `<span>${formatarPercentual(escala.min)}</span><span class="zero" style="left:${zero}%">0%</span><span>${formatarPercentual(escala.max)}</span>`;
-    nota.textContent = "Diferença dos percentuais, 2026 menos 2022. Escala contínua de −10% a +10%. A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento.";
+    nota.textContent = "Variação percentual dos votos absolutos, (2026 − 2022) / 2022. Escala contínua de −50% a +50%. A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento.";
     return;
   }
 }
@@ -471,7 +471,7 @@ montarPainel();
 montarInterruptor();
 desenharLegenda();
 
-fetch("dados/grade.geojson?v=18")
+fetch("dados/grade.geojson?v=19")
   .then((resposta) => resposta.json())
   .then((dados) => {
     prepararCamadas(dados.features);
