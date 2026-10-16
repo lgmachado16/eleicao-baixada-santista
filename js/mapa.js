@@ -27,9 +27,12 @@ const CAMADAS = [
 ];
 
 const ESTRATOS_IPVS = [
-  { valor: 1, cor: "#ffffcc", rotulo: "Baixa vulnerabilidade" },
-  { valor: 2, cor: "#fd8d3c", rotulo: "Média vulnerabilidade" },
-  { valor: 3, cor: "#800026", rotulo: "Alta vulnerabilidade" },
+  { valor: 1, cor: "#1a9850", rotulo: "Baixíssima vulnerabilidade" },
+  { valor: 2, cor: "#91cf60", rotulo: "Muito baixa vulnerabilidade" },
+  { valor: 3, cor: "#d9ef8b", rotulo: "Baixa vulnerabilidade" },
+  { valor: 4, cor: "#fee08b", rotulo: "Média vulnerabilidade" },
+  { valor: 5, cor: "#fc8d59", rotulo: "Alta vulnerabilidade" },
+  { valor: 6, cor: "#d73027", rotulo: "Muito alta vulnerabilidade" },
 ];
 
 function hexParaRgb(hex) {
@@ -425,7 +428,7 @@ function desenharLegenda() {
       item.innerHTML = `<i style="background:${estrato.cor}"></i><span>${estrato.rotulo}</span>`;
       faixa.appendChild(item);
     });
-    nota.textContent = "Estrato mais frequente dos setores cujo centroide cai na célula. Baixa reúne os grupos 1 a 3 do IPVS, média é o grupo 4 e alta reúne os grupos 5 e 6.";
+    nota.textContent = "Classe mais frequente dos setores cujo centroide cai na célula. Verde é a menor vulnerabilidade e vermelho é a maior. Setores não classificados ficam de fora.";
     return;
   }
   if (!camadaAtiva.cores) {
@@ -544,7 +547,7 @@ montarPainel();
 montarInterruptor();
 desenharLegenda();
 
-fetch("dados/grade.geojson?v=20")
+fetch("dados/grade.geojson?v=21")
   .then((resposta) => resposta.json())
   .then((dados) => {
     prepararCamadas(dados.features);

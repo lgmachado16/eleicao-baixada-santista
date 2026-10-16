@@ -345,16 +345,19 @@ function eixoRenda(features) {
 
 function eixoIpvs() {
   faixas = [
+    { rotulo: "Baixíssima" },
+    { rotulo: "Muito baixa" },
     { rotulo: "Baixa" },
     { rotulo: "Média" },
     { rotulo: "Alta" },
+    { rotulo: "Muito alta" },
   ];
   classificar = (propriedades) => {
     const valor = Number(propriedades.ipvs);
-    if (valor === 1 || valor === 2 || valor === 3) return valor - 1;
+    if (valor >= 1 && valor <= 6) return valor - 1;
     return null;
   };
-  tituloEixo = "Estrato de vulnerabilidade (IPVS)";
+  tituloEixo = "Classe de vulnerabilidade (IPVS)";
 }
 
 function desenharPainel(features, prefixo) {
@@ -438,7 +441,7 @@ function desenharPainel(features, prefixo) {
     desenharLinha(canvas("forma-2022"), forma2022, maximoForma);
 }
 
-fetch("dados/grade.geojson?v=20")
+fetch("dados/grade.geojson?v=21")
   .then((resposta) => resposta.json())
   .then((dados) => {
     const features = dados.features;
