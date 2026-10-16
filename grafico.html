@@ -14,7 +14,7 @@
   <p class="nota">A renda é a mediana do responsável nos setores de 2026. As faixas são as mesmas quebras naturais da camada Nominal mediano do mapa.</p>
 
   <h2>Células em que a comparação caiu ou subiu</h2>
-  <p class="nota">Cada coluna conta células em que o total absoluto de 2022 é positivo. A comparação é (2026 − 2022) / 2022. Perda é variação negativa e ganho é variação positiva. Empate em zero não entra. Os quatro gráficos usam a mesma escala vertical.</p>
+  <p class="nota">Cada coluna conta células com base nos dois anos. A comparação é a diferença dos percentuais, 2026 menos 2022. Perda é diferença negativa e ganho é diferença positiva. Empate em zero não entra. Os quatro gráficos usam a mesma escala vertical.</p>
   <h3>Lula</h3>
   <div class="quadro">
     <canvas id="grafico-lula"></canvas>
@@ -81,7 +81,46 @@
     <canvas id="grafico-forma-2022"></canvas>
   </div>
 
+  <h2>Os mesmos gráficos por estrato de vulnerabilidade</h2>
+  <p class="nota">O estrato da célula é o mais frequente entre os setores cujo centroide cai nela. Baixa reúne os grupos 1 a 3 do IPVS, média é o grupo 4 e alta reúne os grupos 5 e 6. Setores não classificados ficam de fora. As leituras repetem as da renda.</p>
+
+  <h3>Células em que a comparação caiu ou subiu</h3>
+  <h3>Lula</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-lula"></canvas></div>
+  <h3>Flávio/Bolsonaro</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-bolsonaro"></canvas></div>
+  <h3>Inválidos</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-invalidos"></canvas></div>
+  <h3>Não comparecimento</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-nc"></canvas></div>
+
+  <h3>Saldo de votos entre 2026 e 2022</h3>
+  <h3>Lula</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-lula-votos"></canvas></div>
+  <h3>Flávio/Bolsonaro</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-bolsonaro-votos"></canvas></div>
+  <h3>Inválidos</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-invalidos-votos"></canvas></div>
+  <h3>Não comparecimento</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-nc-votos"></canvas></div>
+
+  <h3>Votos absolutos em cada estrato</h3>
+  <h3>Lula</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-lula-total"></canvas></div>
+  <h3>Flávio/Bolsonaro</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-bolsonaro-total"></canvas></div>
+  <h3>Inválidos</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-invalidos-total"></canvas></div>
+  <h3>Não comparecimento</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-nc-total"></canvas></div>
+
+  <h3>Forma da distribuição por estrato</h3>
+  <h3>2026</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-forma-2026"></canvas></div>
+  <h3>2022</h3>
+  <div class="quadro"><canvas id="grafico-ipvs-forma-2022"></canvas></div>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
-  <script src="js/grafico.js?v=25"></script>
+  <script src="js/grafico.js?v=26"></script>
 </body>
 </html>

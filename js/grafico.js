@@ -1,4 +1,6 @@
 let faixas = [];
+let classificar = () => null;
+let tituloEixo = "Renda mediana do responsável (R$)";
 
 const COR_PERDA = "#cc2812";
 const COR_GANHO = "#1a9850";
@@ -88,8 +90,8 @@ function contar(features, campo) {
   const ganhou = faixas.map(() => 0);
   features.forEach((feature) => {
     const p = feature.properties;
-    if (!numeroValido(p.renda_mediana) || !numeroValido(p[campo])) return;
-    const indice = indiceFaixa(Number(p.renda_mediana));
+    const indice = classificar(p);
+    if (indice === null || !numeroValido(p[campo])) return;
     const valor = Number(p[campo]);
     if (valor < 0) perdeu[indice] += 1;
     else if (valor > 0) ganhou[indice] += 1;
@@ -102,8 +104,8 @@ function somarDiferenca(features, campo) {
   const ganhou = faixas.map(() => 0);
   features.forEach((feature) => {
     const p = feature.properties;
-    if (!numeroValido(p.renda_mediana) || !numeroValido(p[campo])) return;
-    const indice = indiceFaixa(Number(p.renda_mediana));
+    const indice = classificar(p);
+    if (indice === null || !numeroValido(p[campo])) return;
     const valor = Number(p[campo]);
     if (valor < 0) perdeu[indice] += -valor;
     else if (valor > 0) ganhou[indice] += valor;
@@ -118,8 +120,9 @@ function somarVotos(features, campo, campoBase) {
   const votos = faixas.map(() => 0);
   features.forEach((feature) => {
     const p = feature.properties;
-    if (!numeroValido(p.renda_mediana) || !numeroValido(p[campoBase]) || !numeroValido(p[campo])) return;
-    votos[indiceFaixa(Number(p.renda_mediana))] += Number(p[campo]);
+    const indice = classificar(p);
+    if (indice === null || !numeroValido(p[campoBase]) || !numeroValido(p[campo])) return;
+    votos[indice] += Number(p[campo]);
   });
   return votos.map((valor) => Math.round(valor));
 }
@@ -154,7 +157,7 @@ function desenhar(canvas, series, maximo, tituloY, unidade) {
         },
       },
       scales: {
-        x: { title: { display: true, text: "Renda mediana do responsável (R$)" } },
+        x: { title: { display: true, text: tituloEixo } },
         y: {
           beginAtZero: true,
           max: maximo,
@@ -189,8 +192,8 @@ function saldoPorFaixa(features, campoDif, campoBase) {
   const base = faixas.map(() => 0);
   features.forEach((feature) => {
     const p = feature.properties;
-    if (!numeroValido(p.renda_mediana) || !numeroValido(p[campoDif]) || !numeroValido(p[campoBase])) return;
-    const indice = indiceFaixa(Number(p.renda_mediana));
+    const indice = classificar(p);
+    if (indice === null || !numeroValido(p[campoDif]) || !numeroValido(p[campoBase])) return;
     saldo[indice] += Number(p[campoDif]);
     base[indice] += Number(p[campoBase]);
   });
@@ -251,7 +254,7 @@ function desenharSaldo(canvas, saldo, eixoVotos, eixoPercentual) {
         },
       },
       scales: {
-        x: { title: { display: true, text: "Renda mediana do responsável (R$)" } },
+        x: { title: { display: true, text: tituloEixo } },
         y: {
           position: "left",
           min: eixoVotos.min,
@@ -316,7 +319,7 @@ function desenharLinha(canvas, series, maximo) {
         },
       },
       scales: {
-        x: { title: { display: true, text: "Renda mediana do responsável (R$)" } },
+        x: { title: { display: true, text: tituloEixo } },
         y: {
           beginAtZero: true,
           max: maximo,
@@ -332,11 +335,30 @@ function desenharLinha(canvas, series, maximo) {
   });
 }
 
-fetch("dados/grade.geojson?v=19")
-  .then((resposta) => resposta.json())
-  .then((dados) => {
-    const features = dados.features;
-    montarFaixas(features);
+function eixoRenda(features) {
+  montarFaixas(features);
+  classificar = (propriedades) => (
+    numeroValido(propriedades.renda_mediana) ? indiceFaixa(Number(propriedades.renda_mediana)) : null
+  );
+  tituloEixo = "Renda mediana do responsável (R$)";
+}
+
+function eixoIpvs() {
+  faixas = [
+    { rotulo: "Baixa" },
+    { rotulo: "Média" },
+    { rotulo: "Alta" },
+  ];
+  classificar = (propriedades) => {
+    const valor = Number(propriedades.ipvs);
+    if (valor === 1 || valor === 2 || valor === 3) return valor - 1;
+    return null;
+  };
+  tituloEixo = "Estrato de vulnerabilidade (IPVS)";
+}
+
+function desenharPainel(features, prefixo) {
+  const canvas = (nome) => document.getElementById(`${prefixo}${nome}`);
     const lula = contar(features, "dif_pct_lula");
     const bolsonaro = contar(features, "dif_pct_bolsonaro");
     const invalidos = contar(features, "dif_pct_invalidos");
@@ -345,10 +367,10 @@ fetch("dados/grade.geojson?v=19")
       lula.perdeu, lula.ganhou, bolsonaro.perdeu, bolsonaro.ganhou,
       invalidos.perdeu, invalidos.ganhou, nc.perdeu, nc.ganhou,
     ]);
-    desenhar(document.getElementById("grafico-lula"), seriesVariacao(lula), maximoCelulas, "Quantidade de células", "células");
-    desenhar(document.getElementById("grafico-bolsonaro"), seriesVariacao(bolsonaro), maximoCelulas, "Quantidade de células", "células");
-    desenhar(document.getElementById("grafico-invalidos"), seriesVariacao(invalidos), maximoCelulas, "Quantidade de células", "células");
-    desenhar(document.getElementById("grafico-nc"), seriesVariacao(nc), maximoCelulas, "Quantidade de células", "células");
+    desenhar(canvas("lula"), seriesVariacao(lula), maximoCelulas, "Quantidade de células", "células");
+    desenhar(canvas("bolsonaro"), seriesVariacao(bolsonaro), maximoCelulas, "Quantidade de células", "células");
+    desenhar(canvas("invalidos"), seriesVariacao(invalidos), maximoCelulas, "Quantidade de células", "células");
+    desenhar(canvas("nc"), seriesVariacao(nc), maximoCelulas, "Quantidade de células", "células");
 
     const lulaSaldo = saldoPorFaixa(features, "dif_lula", "votos_lula_2022");
     const bolsonaroSaldo = saldoPorFaixa(features, "dif_bolsonaro", "votos_bolsonaro_2022");
@@ -357,10 +379,10 @@ fetch("dados/grade.geojson?v=19")
     const saldos = [lulaSaldo, bolsonaroSaldo, invalidosSaldo, ncSaldo];
     const eixoVotos = limitesEixo(saldos.map((item) => item.absoluto));
     const eixoPercentual = limitesEixo(saldos.map((item) => item.percentual));
-    desenharSaldo(document.getElementById("grafico-lula-votos"), lulaSaldo, eixoVotos, eixoPercentual);
-    desenharSaldo(document.getElementById("grafico-bolsonaro-votos"), bolsonaroSaldo, eixoVotos, eixoPercentual);
-    desenharSaldo(document.getElementById("grafico-invalidos-votos"), invalidosSaldo, eixoVotos, eixoPercentual);
-    desenharSaldo(document.getElementById("grafico-nc-votos"), ncSaldo, eixoVotos, eixoPercentual);
+    desenharSaldo(canvas("lula-votos"), lulaSaldo, eixoVotos, eixoPercentual);
+    desenharSaldo(canvas("bolsonaro-votos"), bolsonaroSaldo, eixoVotos, eixoPercentual);
+    desenharSaldo(canvas("invalidos-votos"), invalidosSaldo, eixoVotos, eixoPercentual);
+    desenharSaldo(canvas("nc-votos"), ncSaldo, eixoVotos, eixoPercentual);
 
     const totais = [
       somarVotos(features, "votos_lula_2022", "pct_lula_2022"),
@@ -374,19 +396,19 @@ fetch("dados/grade.geojson?v=19")
     ];
     const maximoTotal = maximoDe(totais);
     const serieAno = (rotulo, dados, cor) => ({ rotulo, dados, cor });
-    desenhar(document.getElementById("grafico-lula-total"), [
+    desenhar(canvas("lula-total"), [
       serieAno("2022", totais[0], COR_2022),
       serieAno("2026", totais[1], COR_2026),
     ], maximoTotal, "Votos", "votos");
-    desenhar(document.getElementById("grafico-bolsonaro-total"), [
+    desenhar(canvas("bolsonaro-total"), [
       serieAno("2022", totais[2], COR_2022),
       serieAno("2026", totais[3], COR_2026),
     ], maximoTotal, "Votos", "votos");
-    desenhar(document.getElementById("grafico-invalidos-total"), [
+    desenhar(canvas("invalidos-total"), [
       serieAno("2022", totais[4], COR_2022),
       serieAno("2026", totais[5], COR_2026),
     ], maximoTotal, "Votos", "votos");
-    desenhar(document.getElementById("grafico-nc-total"), [
+    desenhar(canvas("nc-total"), [
       serieAno("2022", totais[6], COR_2022),
       serieAno("2026", totais[7], COR_2026),
     ], maximoTotal, "Votos", "votos");
@@ -412,6 +434,16 @@ fetch("dados/grade.geojson?v=19")
       forma("Não comparecimento", totais[6], COR_NC),
     ];
     const maximoForma = maximoDe([...forma2026, ...forma2022].map((serie) => serie.dados));
-    desenharLinha(document.getElementById("grafico-forma-2026"), forma2026, maximoForma);
-    desenharLinha(document.getElementById("grafico-forma-2022"), forma2022, maximoForma);
+    desenharLinha(canvas("forma-2026"), forma2026, maximoForma);
+    desenharLinha(canvas("forma-2022"), forma2022, maximoForma);
+}
+
+fetch("dados/grade.geojson?v=20")
+  .then((resposta) => resposta.json())
+  .then((dados) => {
+    const features = dados.features;
+    eixoRenda(features);
+    desenharPainel(features, "grafico-");
+    eixoIpvs();
+    desenharPainel(features, "grafico-ipvs-");
   });

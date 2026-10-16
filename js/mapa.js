@@ -9,20 +9,27 @@ const CAMADAS = [
   { grupo: "Eleição 2026", id: "cury26", rotulo: "Augusto Cury", campo: "pct_cury_2026", campoAbsoluto: "votos_cury_2026", tipo: "jenks" },
   { grupo: "Eleição 2026", id: "renan26", rotulo: "Renan Santos", campo: "pct_renan_2026", campoAbsoluto: "votos_renan_2026", tipo: "jenks" },
   { grupo: "Eleição 2026", id: "caiado26", rotulo: "Caiado", campo: "pct_caiado_2026", campoAbsoluto: "votos_caiado_2026", tipo: "jenks" },
-  { grupo: "Eleição 2026", id: "inv26", rotulo: "Inválidos", campo: "pct_invalidos_2026", campoAbsoluto: "votos_invalidos_2026", tipo: "jenks" },
-  { grupo: "Eleição 2026", id: "nc26", rotulo: "Não comparecimento", campo: "pct_nc_2026", campoAbsoluto: "votos_nc_2026", tipo: "jenks" },
+  { grupo: "Eleição 2026", id: "inv26", rotulo: "Inválidos", campo: "pct_invalidos_2026", campoAbsoluto: "votos_invalidos_2026", tipo: "jenks", escala: "invalidos" },
+  { grupo: "Eleição 2026", id: "nc26", rotulo: "Não comparecimento", campo: "pct_nc_2026", campoAbsoluto: "votos_nc_2026", tipo: "jenks", escala: "comparecimento" },
   { grupo: "Eleição 2022", id: "disputa22", rotulo: "Lula x Bolsonaro", campo: "parte_lula_2022", tipo: "disputa", adversario: "Bolsonaro" },
   { grupo: "Eleição 2022", id: "lula22", rotulo: "Lula", campo: "pct_lula_2022", campoAbsoluto: "votos_lula_2022", tipo: "jenks", escala: "principais" },
   { grupo: "Eleição 2022", id: "bolsonaro22", rotulo: "Bolsonaro", campo: "pct_bolsonaro_2022", campoAbsoluto: "votos_bolsonaro_2022", tipo: "jenks", escala: "principais" },
   { grupo: "Eleição 2022", id: "tebet22", rotulo: "Tebet", campo: "pct_tebet_2022", campoAbsoluto: "votos_tebet_2022", tipo: "jenks" },
   { grupo: "Eleição 2022", id: "ciro22", rotulo: "Ciro", campo: "pct_ciro_2022", campoAbsoluto: "votos_ciro_2022", tipo: "jenks" },
-  { grupo: "Eleição 2022", id: "inv22", rotulo: "Inválidos", campo: "pct_invalidos_2022", campoAbsoluto: "votos_invalidos_2022", tipo: "jenks" },
-  { grupo: "Eleição 2022", id: "nc22", rotulo: "Não comparecimento", campo: "pct_nc_2022", campoAbsoluto: "votos_nc_2022", tipo: "jenks" },
-  { grupo: "Comparação 2026x2022", id: "difLula", rotulo: "Lula", campo: "dif_pct_lula", tipo: "div" },
-  { grupo: "Comparação 2026x2022", id: "difBolsonaro", rotulo: "Bolsonaro / Flávio", campo: "dif_pct_bolsonaro", tipo: "div" },
-  { grupo: "Comparação 2026x2022", id: "difInv", rotulo: "Inválidos", campo: "dif_pct_invalidos", tipo: "div" },
-  { grupo: "Comparação 2026x2022", id: "difNc", rotulo: "Não comparecimento", campo: "dif_pct_nc", tipo: "div" },
+  { grupo: "Eleição 2022", id: "inv22", rotulo: "Inválidos", campo: "pct_invalidos_2022", campoAbsoluto: "votos_invalidos_2022", tipo: "jenks", escala: "invalidos" },
+  { grupo: "Eleição 2022", id: "nc22", rotulo: "Não comparecimento", campo: "pct_nc_2022", campoAbsoluto: "votos_nc_2022", tipo: "jenks", escala: "comparecimento" },
+  { grupo: "Comparação 2026x2022", id: "difLula", rotulo: "Lula", campo: "dif_pct_lula", campoAbsoluto: "dif_lula", tipo: "div", escalaDif: "difPrincipais" },
+  { grupo: "Comparação 2026x2022", id: "difBolsonaro", rotulo: "Bolsonaro / Flávio", campo: "dif_pct_bolsonaro", campoAbsoluto: "dif_bolsonaro", tipo: "div", escalaDif: "difPrincipais" },
+  { grupo: "Comparação 2026x2022", id: "difInv", rotulo: "Inválidos", campo: "dif_pct_invalidos", campoAbsoluto: "dif_invalidos", tipo: "div", escalaDif: "difInvalidos" },
+  { grupo: "Comparação 2026x2022", id: "difNc", rotulo: "Não comparecimento", campo: "dif_pct_nc", campoAbsoluto: "dif_nc", tipo: "div", escalaDif: "difComparecimento" },
   { grupo: "Rendimento", id: "renda", rotulo: "Nominal mediano", campo: "renda_mediana", tipo: "reais" },
+  { grupo: "Vulnerabilidade", id: "ipvs", rotulo: "IPVS", campo: "ipvs", tipo: "estrato" },
+];
+
+const ESTRATOS_IPVS = [
+  { valor: 1, cor: "#ffffcc", rotulo: "Baixa vulnerabilidade" },
+  { valor: 2, cor: "#fd8d3c", rotulo: "Média vulnerabilidade" },
+  { valor: 3, cor: "#800026", rotulo: "Alta vulnerabilidade" },
 ];
 
 function hexParaRgb(hex) {
@@ -220,15 +227,35 @@ function prepararCamadas(features) {
     camada.def = { tipo: "reais", quebras, compartilhada: false };
     camada.cores = coresSequenciais(quebras.length - 1);
   });
-  prepararComparacoes();
+  prepararComparacoes(features);
 }
 
-function prepararComparacoes() {
-  const minimo = -0.5;
-  const maximo = 0.5;
+function limiteSimetrico(valores) {
+  const absolutos = valores.map((valor) => Math.abs(valor)).sort((a, b) => a - b);
+  if (!absolutos.length) return 1;
+  const posicao = Math.min(absolutos.length - 1, Math.floor(0.9 * (absolutos.length - 1)));
+  const referencia = Math.max(1, absolutos[posicao]);
+  const magnitude = 10 ** Math.floor(Math.log10(referencia));
+  return Math.ceil(referencia / magnitude) * magnitude;
+}
+
+function prepararComparacoes(features) {
   CAMADAS.filter((camada) => camada.tipo === "div").forEach((camada) => {
-    camada.def = { tipo: "div", min: minimo, max: maximo, compartilhada: true };
+    camada.def = { tipo: "div", min: -0.1, max: 0.1, compartilhada: true };
     camada.cores = ESPECTRAL.slice();
+  });
+  const grupos = new Map();
+  CAMADAS.filter((camada) => camada.tipo === "div" && camada.campoAbsoluto).forEach((camada) => {
+    const lista = grupos.get(camada.escalaDif) || [];
+    lista.push(...valoresDaCamada(features, camada.campoAbsoluto, camada.campo));
+    grupos.set(camada.escalaDif, lista);
+  });
+  grupos.forEach((valores, nome) => {
+    const limite = limiteSimetrico(valores);
+    CAMADAS.filter((camada) => camada.escalaDif === nome).forEach((camada) => {
+      camada.defAbsoluto = { tipo: "div", min: -limite, max: limite, compartilhada: true };
+      camada.coresAbsoluto = ESPECTRAL.slice();
+    });
   });
 }
 
@@ -276,7 +303,7 @@ let grade;
 let modoAbsoluto = false;
 
 function vista(camada) {
-  if (modoAbsoluto && camada.tipo === "jenks" && camada.defAbsoluto) {
+  if (modoAbsoluto && camada.campoAbsoluto && camada.defAbsoluto) {
     return {
       def: camada.defAbsoluto,
       cores: camada.coresAbsoluto,
@@ -285,6 +312,11 @@ function vista(camada) {
     };
   }
   return { def: camada.def, cores: camada.cores, campo: camada.campo, absoluto: false };
+}
+
+function rotuloIpvs(valor) {
+  const estrato = ESTRATOS_IPVS.find((item) => item.valor === Number(valor));
+  return estrato ? estrato.rotulo : "sem dado";
 }
 
 function valorVisivel(propriedades, camada) {
@@ -304,9 +336,16 @@ function estilo(feature, destaque = false) {
       temDado = true;
     }
   } else if (camadaAtiva.tipo === "div") {
-    const valor = feature.properties[camadaAtiva.campo];
-    if (numeroValido(valor)) {
-      fillColor = corEspectral(Number(valor), camadaAtiva.def.min, camadaAtiva.def.max);
+    const atual = vista(camadaAtiva);
+    const valor = feature.properties[atual.campo];
+    if (numeroValido(valor) && atual.def) {
+      fillColor = corEspectral(Number(valor), atual.def.min, atual.def.max);
+      temDado = true;
+    }
+  } else if (camadaAtiva.tipo === "estrato") {
+    const estrato = ESTRATOS_IPVS.find((item) => item.valor === Number(feature.properties[camadaAtiva.campo]));
+    if (estrato) {
+      fillColor = estrato.cor;
       temDado = true;
     }
   } else if (camadaAtiva.tipo === "jenks" || camadaAtiva.tipo === "reais") {
@@ -340,7 +379,12 @@ function textoCamada(camada, propriedades) {
     const parcela = numero > 0.5 ? numero : 1 - numero;
     return `${camada.rotulo}: ${vencedor} com ${formatarPercentual(parcela)} da soma`;
   }
-  if (camada.tipo === "div") return `${camada.rotulo}: ${formatarPercentual(propriedades[camada.campo])}`;
+  if (camada.tipo === "div") {
+    const atual = vista(camada);
+    const texto = atual.absoluto ? formatarVotos(propriedades[atual.campo]) : formatarPercentual(propriedades[atual.campo]);
+    return `${camada.rotulo}: ${texto}`;
+  }
+  if (camada.tipo === "estrato") return `${camada.rotulo}: ${rotuloIpvs(propriedades[camada.campo])}`;
   if (camada.tipo === "reais") return `${camada.rotulo}: ${formatarRenda(propriedades[camada.campo])}`;
   const valor = valorVisivel(propriedades, camada);
   const texto = vista(camada).absoluto ? formatarVotos(valor) : formatarPercentual(valor);
@@ -356,8 +400,10 @@ function popup(feature) {
       return camada.id === camadaAtiva.id ? `<strong>${texto}</strong>` : texto;
     })
     .join("<br>");
-  const renda = camadaAtiva.tipo === "reais" ? "" : `<br>Renda mediana: ${formatarRenda(p.renda_mediana)}`;
-  return `<strong>${camadaAtiva.grupo}</strong><br>${linhas}<br>${p.nm_mun || "sem município"}${renda}`;
+  const extras = [];
+  if (camadaAtiva.tipo !== "reais") extras.push(`Renda mediana: ${formatarRenda(p.renda_mediana)}`);
+  if (camadaAtiva.id !== "ipvs") extras.push(`IPVS: ${rotuloIpvs(p.ipvs)}`);
+  return `<strong>${camadaAtiva.grupo}</strong><br>${linhas}<br>${p.nm_mun || "sem município"}<br>${extras.join("<br>")}`;
 }
 
 function desenharLegenda() {
@@ -371,6 +417,17 @@ function desenharLegenda() {
   marcas.innerHTML = "";
   marcas.className = "marcas";
   titulo.textContent = `${camadaAtiva.grupo}: ${camadaAtiva.rotulo}`;
+  if (camadaAtiva.tipo === "estrato") {
+    faixa.classList.add("lista");
+    ESTRATOS_IPVS.forEach((estrato) => {
+      const item = document.createElement("div");
+      item.className = "classe";
+      item.innerHTML = `<i style="background:${estrato.cor}"></i><span>${estrato.rotulo}</span>`;
+      faixa.appendChild(item);
+    });
+    nota.textContent = "Estrato mais frequente dos setores cujo centroide cai na célula. Baixa reúne os grupos 1 a 3 do IPVS, média é o grupo 4 e alta reúne os grupos 5 e 6.";
+    return;
+  }
   if (!camadaAtiva.cores) {
     nota.textContent = "";
     return;
@@ -412,19 +469,35 @@ function desenharLegenda() {
       return;
     }
     const unidade = atual.absoluto ? " A escala está em votos." : "";
-    nota.textContent = atual.def.compartilhada
-      ? `Mesma escala de Lula e Bolsonaro, nos dois anos.${unidade}`
-      : `Quebras naturais desta camada.${unidade}`;
+    nota.textContent = `${notaDaEscala(camadaAtiva)}.${unidade}`;
     return;
   }
   if (camadaAtiva.def.tipo === "div") {
-    const escala = camadaAtiva.def;
+    const atual = vista(camadaAtiva);
+    const escala = atual.def;
+    const formatar = atual.absoluto ? formatarVotos : formatarPercentual;
     faixa.style.background = `linear-gradient(to right, ${ESPECTRAL.join(", ")})`;
     const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
-    marcas.innerHTML = `<span>${formatarPercentual(escala.min)}</span><span class="zero" style="left:${zero}%">0%</span><span>${formatarPercentual(escala.max)}</span>`;
-    nota.textContent = "Variação percentual dos votos absolutos, (2026 − 2022) / 2022. Escala contínua de −50% a +50%. A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento.";
-    return;
+    const marcaZero = atual.absoluto ? "0" : "0%";
+    marcas.innerHTML = `<span>${formatar(escala.min)}</span><span class="zero" style="left:${zero}%">${marcaZero}</span><span>${formatar(escala.max)}</span>`;
+    const mesma = camadaAtiva.escalaDif === "difPrincipais" ? " Mesma escala de Lula e de Bolsonaro/Flávio." : "";
+    nota.textContent = atual.absoluto
+      ? `Diferença de votos, 2026 menos 2022.${mesma} A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento.`
+      : "Diferença dos percentuais, 2026 menos 2022. Escala contínua de −10% a +10%. A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento.";
   }
+}
+
+function notaDaEscala(camada) {
+  if (camada.escala === "principais" || camada.escalaDif === "difPrincipais") {
+    return "Mesma escala de Lula e Bolsonaro, nos dois anos";
+  }
+  if (camada.escala === "invalidos" || camada.escalaDif === "difInvalidos") {
+    return "Mesma escala de inválidos em 2022 e em 2026";
+  }
+  if (camada.escala === "comparecimento" || camada.escalaDif === "difComparecimento") {
+    return "Mesma escala de não comparecimento em 2022 e em 2026";
+  }
+  return "Quebras naturais desta camada";
 }
 
 function aplicarCamada(id) {
@@ -471,7 +544,7 @@ montarPainel();
 montarInterruptor();
 desenharLegenda();
 
-fetch("dados/grade.geojson?v=19")
+fetch("dados/grade.geojson?v=20")
   .then((resposta) => resposta.json())
   .then((dados) => {
     prepararCamadas(dados.features);
