@@ -335,6 +335,171 @@ function desenharLinha(canvas, series, maximo) {
   });
 }
 
+const COR_DEMAIS = "#78716c";
+
+function percentuaisDaClasse(votos) {
+  const nomes = Object.keys(votos);
+  const soma = nomes.reduce((acumulado, nome) => acumulado + votos[nome], 0);
+  if (soma <= 0) return nomes.map(() => 0);
+  const percentuais = nomes.map((nome) => Math.round((votos[nome] / soma) * 1000) / 10);
+  const ajuste = Math.round((100 - percentuais.reduce((acumulado, valor) => acumulado + valor, 0)) * 10) / 10;
+  if (ajuste !== 0) {
+    let maior = 0;
+    percentuais.forEach((valor, indice) => {
+      if (valor > percentuais[maior]) maior = indice;
+    });
+    percentuais[maior] = Math.round((percentuais[maior] + ajuste) * 10) / 10;
+  }
+  return percentuais;
+}
+
+function composicaoPorClasse(features, campos) {
+  const acumulado = faixas.map(() => ({ lula: 0, adversario: 0, demais: 0, invalidos: 0 }));
+  features.forEach((feature) => {
+    const p = feature.properties;
+    const indice = classificar(p);
+    if (indice === null || campos.some((campo) => !numeroValido(p[campo]))) return;
+    const lula = Number(p[campos[0]]);
+    const adversario = Number(p[campos[1]]);
+    const invalidos = Number(p[campos[2]]);
+    const totais = Number(p[campos[3]]);
+    const item = acumulado[indice];
+    item.lula += lula;
+    item.adversario += adversario;
+    item.invalidos += invalidos;
+    item.demais += Math.max(0, totais - lula - adversario - invalidos);
+  });
+  return acumulado.map((item) => ({
+    votos: {
+      lula: Math.round(item.lula),
+      adversario: Math.round(item.adversario),
+      demais: Math.round(item.demais),
+      invalidos: Math.round(item.invalidos),
+    },
+    percentuais: percentuaisDaClasse(item),
+  }));
+}
+
+function desenharEmpilhado(canvas, grupos) {
+  const categorias = [
+    { chave: "lula", rotulo: "Lula", cor: COR_LULA },
+    { chave: "adversario", rotulo: "Bolsonaro / Flávio", cor: COR_ADVERSARIO },
+    { chave: "demais", rotulo: "Demais candidatos", cor: COR_DEMAIS },
+    { chave: "invalidos", rotulo: "Inválidos", cor: COR_INVALIDOS },
+  ];
+  const datasets = grupos.flatMap((grupo) => categorias.map((categoria) => ({
+    label: categoria.rotulo,
+    data: grupo.classes.map((classe) => classe.percentuais[categorias.findIndex((item) => item.chave === categoria.chave)]),
+    votos: grupo.classes.map((classe) => classe.votos[categoria.chave]),
+    backgroundColor: categoria.cor,
+    stack: grupo.ano,
+  })));
+
+  new Chart(canvas, {
+    type: "bar",
+    plugins: [{
+      id: "rotulosEmpilhados",
+      afterDatasetsDraw(grafico) {
+        const { ctx } = grafico;
+        ctx.save();
+        ctx.font = "12px Segoe UI, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#fff";
+        ctx.fillStyle = "#1c1917";
+        grafico.data.datasets.forEach((dataset, indice) => {
+          const meta = grafico.getDatasetMeta(indice);
+          meta.data.forEach((barra, posicao) => {
+            const valor = dataset.data[posicao];
+            const { x, y, base } = barra.getProps(["x", "y", "base"], true);
+            if (Math.abs(base - y) < 16) return;
+            const texto = `${Number(valor).toLocaleString("pt-BR")}%`;
+            const meio = (y + base) / 2;
+            ctx.strokeText(texto, x, meio);
+            ctx.fillText(texto, x, meio);
+          });
+        });
+        ctx.font = "11px Segoe UI, sans-serif";
+        ctx.textBaseline = "top";
+        grupos.forEach((grupo, indiceGrupo) => {
+          const meta = grafico.getDatasetMeta(indiceGrupo * categorias.length);
+          meta.data.forEach((barra) => {
+            const { x } = barra.getProps(["x"], true);
+            ctx.strokeText(grupo.ano, x, grafico.chartArea.bottom + 4);
+            ctx.fillText(grupo.ano, x, grafico.chartArea.bottom + 4);
+          });
+        });
+        ctx.restore();
+      },
+    }],
+    data: {
+      labels: faixas.map((faixa) => faixa.rotulo),
+      datasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      color: "#1c1917",
+      layout: { padding: { bottom: 4 } },
+      plugins: {
+        legend: {
+          labels: {
+            filter(item) {
+              return datasets[item.datasetIndex].stack === grupos[0].ano;
+            },
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label(contexto) {
+              const percentual = Number(contexto.raw).toLocaleString("pt-BR");
+              const votos = Number(contexto.dataset.votos[contexto.dataIndex]).toLocaleString("pt-BR");
+              return `${contexto.dataset.stack} · ${contexto.dataset.label}: ${percentual}% (${votos} votos)`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          stacked: true,
+          title: { display: true, text: tituloEixo },
+          ticks: { padding: 18 },
+        },
+        y: {
+          stacked: true,
+          min: 0,
+          max: 100,
+          title: { display: true, text: "Repartição dos votos da classe (%)" },
+          ticks: {
+            callback(valor) {
+              return `${Number(valor).toLocaleString("pt-BR")}%`;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+function desenharComposicao(features) {
+  const grupos = [
+    {
+      ano: "2022",
+      classes: composicaoPorClasse(features, [
+        "votos_lula_2022", "votos_bolsonaro_2022", "votos_invalidos_2022", "votos_totais_2022",
+      ]),
+    },
+    {
+      ano: "2026",
+      classes: composicaoPorClasse(features, [
+        "votos_lula_2026", "votos_flavio_2026", "votos_invalidos_2026", "votos_totais_2026",
+      ]),
+    },
+  ];
+  desenharEmpilhado(document.getElementById("grafico-ipvs-forma-empilhada"), grupos);
+}
+
 function eixoRenda(features) {
   montarFaixas(features);
   classificar = (propriedades) => (
@@ -449,4 +614,5 @@ fetch("dados/grade.geojson?v=21")
     desenharPainel(features, "grafico-");
     eixoIpvs();
     desenharPainel(features, "grafico-ipvs-");
+    desenharComposicao(features);
   });
