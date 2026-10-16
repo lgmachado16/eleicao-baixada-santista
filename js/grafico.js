@@ -383,7 +383,8 @@ function composicaoPorClasse(features, campos) {
   }));
 }
 
-function desenharEmpilhado(canvas, grupos) {
+function desenharEmpilhado(canvas, grupos, modo) {
+  const absoluto = modo === "absoluto";
   const categorias = [
     { chave: "lula", rotulo: "Lula", cor: COR_LULA },
     { chave: "adversario", rotulo: "Bolsonaro / Flávio", cor: COR_ADVERSARIO },
@@ -391,10 +392,11 @@ function desenharEmpilhado(canvas, grupos) {
     { chave: "invalidos", rotulo: "Inválidos", cor: COR_INVALIDOS },
     { chave: "nc", rotulo: "Não comparecimento", cor: COR_NC },
   ];
-  const datasets = grupos.flatMap((grupo) => categorias.map((categoria) => ({
+  const datasets = grupos.flatMap((grupo) => categorias.map((categoria, indice) => ({
     label: categoria.rotulo,
-    data: grupo.classes.map((classe) => classe.percentuais[categorias.findIndex((item) => item.chave === categoria.chave)]),
+    data: grupo.classes.map((classe) => (absoluto ? classe.votos[categoria.chave] : classe.percentuais[indice])),
     votos: grupo.classes.map((classe) => classe.votos[categoria.chave]),
+    percentuais: grupo.classes.map((classe) => classe.percentuais[indice]),
     backgroundColor: categoria.cor,
     stack: grupo.ano,
   })));
@@ -418,7 +420,10 @@ function desenharEmpilhado(canvas, grupos) {
             const valor = dataset.data[posicao];
             const { x, y, base } = barra.getProps(["x", "y", "base"], true);
             if (Math.abs(base - y) < 16) return;
-            const texto = `${Number(valor).toLocaleString("pt-BR")}%`;
+            const texto = absoluto
+              ? Number(valor).toLocaleString("pt-BR")
+              : `${Number(valor).toLocaleString("pt-BR")}%`;
+            if (ctx.measureText(texto).width > barra.width - 6) return;
             const meio = (y + base) / 2;
             ctx.strokeText(texto, x, meio);
             ctx.fillText(texto, x, meio);
@@ -457,10 +462,12 @@ function desenharEmpilhado(canvas, grupos) {
         tooltip: {
           callbacks: {
             label(contexto) {
-              const percentual = Number(contexto.raw).toLocaleString("pt-BR");
+              const percentual = Number(contexto.dataset.percentuais[contexto.dataIndex]).toLocaleString("pt-BR");
               const quantidade = Number(contexto.dataset.votos[contexto.dataIndex]).toLocaleString("pt-BR");
               const unidade = contexto.dataset.label === "Não comparecimento" ? "eleitores" : "votos";
-              return `${contexto.dataset.stack} · ${contexto.dataset.label}: ${percentual}% (${quantidade} ${unidade})`;
+              const prefixo = `${contexto.dataset.stack} · ${contexto.dataset.label}`;
+              if (absoluto) return `${prefixo}: ${quantidade} ${unidade} (${percentual}%)`;
+              return `${prefixo}: ${percentual}% (${quantidade} ${unidade})`;
             },
           },
         },
@@ -474,11 +481,15 @@ function desenharEmpilhado(canvas, grupos) {
         y: {
           stacked: true,
           min: 0,
-          max: 100,
-          title: { display: true, text: "Repartição dos eleitores da classe (%)" },
+          max: absoluto ? undefined : 100,
+          title: {
+            display: true,
+            text: absoluto ? "Eleitores da classe" : "Repartição dos eleitores da classe (%)",
+          },
           ticks: {
             callback(valor) {
-              return `${Number(valor).toLocaleString("pt-BR")}%`;
+              const texto = Number(valor).toLocaleString("pt-BR");
+              return absoluto ? texto : `${texto}%`;
             },
           },
         },
@@ -502,7 +513,8 @@ function desenharComposicao(features) {
       ]),
     },
   ];
-  desenharEmpilhado(document.getElementById("grafico-ipvs-forma-empilhada"), grupos);
+  desenharEmpilhado(document.getElementById("grafico-ipvs-forma-empilhada"), grupos, "percentual");
+  desenharEmpilhado(document.getElementById("grafico-ipvs-forma-empilhada-absoluta"), grupos, "absoluto");
 }
 
 function eixoRenda(features) {
