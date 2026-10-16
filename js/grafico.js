@@ -354,7 +354,7 @@ function percentuaisDaClasse(votos) {
 }
 
 function composicaoPorClasse(features, campos) {
-  const acumulado = faixas.map(() => ({ lula: 0, adversario: 0, demais: 0, invalidos: 0 }));
+  const acumulado = faixas.map(() => ({ lula: 0, adversario: 0, demais: 0, invalidos: 0, nc: 0 }));
   features.forEach((feature) => {
     const p = feature.properties;
     const indice = classificar(p);
@@ -363,11 +363,13 @@ function composicaoPorClasse(features, campos) {
     const adversario = Number(p[campos[1]]);
     const invalidos = Number(p[campos[2]]);
     const totais = Number(p[campos[3]]);
+    const nc = Number(p[campos[4]]);
     const item = acumulado[indice];
     item.lula += lula;
     item.adversario += adversario;
     item.invalidos += invalidos;
     item.demais += Math.max(0, totais - lula - adversario - invalidos);
+    item.nc += nc;
   });
   return acumulado.map((item) => ({
     votos: {
@@ -375,6 +377,7 @@ function composicaoPorClasse(features, campos) {
       adversario: Math.round(item.adversario),
       demais: Math.round(item.demais),
       invalidos: Math.round(item.invalidos),
+      nc: Math.round(item.nc),
     },
     percentuais: percentuaisDaClasse(item),
   }));
@@ -386,6 +389,7 @@ function desenharEmpilhado(canvas, grupos) {
     { chave: "adversario", rotulo: "Bolsonaro / Flávio", cor: COR_ADVERSARIO },
     { chave: "demais", rotulo: "Demais candidatos", cor: COR_DEMAIS },
     { chave: "invalidos", rotulo: "Inválidos", cor: COR_INVALIDOS },
+    { chave: "nc", rotulo: "Não comparecimento", cor: COR_NC },
   ];
   const datasets = grupos.flatMap((grupo) => categorias.map((categoria) => ({
     label: categoria.rotulo,
@@ -454,8 +458,9 @@ function desenharEmpilhado(canvas, grupos) {
           callbacks: {
             label(contexto) {
               const percentual = Number(contexto.raw).toLocaleString("pt-BR");
-              const votos = Number(contexto.dataset.votos[contexto.dataIndex]).toLocaleString("pt-BR");
-              return `${contexto.dataset.stack} · ${contexto.dataset.label}: ${percentual}% (${votos} votos)`;
+              const quantidade = Number(contexto.dataset.votos[contexto.dataIndex]).toLocaleString("pt-BR");
+              const unidade = contexto.dataset.label === "Não comparecimento" ? "eleitores" : "votos";
+              return `${contexto.dataset.stack} · ${contexto.dataset.label}: ${percentual}% (${quantidade} ${unidade})`;
             },
           },
         },
@@ -470,7 +475,7 @@ function desenharEmpilhado(canvas, grupos) {
           stacked: true,
           min: 0,
           max: 100,
-          title: { display: true, text: "Repartição dos votos da classe (%)" },
+          title: { display: true, text: "Repartição dos eleitores da classe (%)" },
           ticks: {
             callback(valor) {
               return `${Number(valor).toLocaleString("pt-BR")}%`;
@@ -487,13 +492,13 @@ function desenharComposicao(features) {
     {
       ano: "2022",
       classes: composicaoPorClasse(features, [
-        "votos_lula_2022", "votos_bolsonaro_2022", "votos_invalidos_2022", "votos_totais_2022",
+        "votos_lula_2022", "votos_bolsonaro_2022", "votos_invalidos_2022", "votos_totais_2022", "votos_nc_2022",
       ]),
     },
     {
       ano: "2026",
       classes: composicaoPorClasse(features, [
-        "votos_lula_2026", "votos_flavio_2026", "votos_invalidos_2026", "votos_totais_2026",
+        "votos_lula_2026", "votos_flavio_2026", "votos_invalidos_2026", "votos_totais_2026", "votos_nc_2026",
       ]),
     },
   ];
