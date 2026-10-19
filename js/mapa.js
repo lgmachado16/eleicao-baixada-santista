@@ -1,21 +1,22 @@
 const OPACIDADE = 0.8;
 const CLASSES_NATURAIS = 5;
 const CLASSES_PRINCIPAIS = 6;
+const CLASSES_DEZ = 10;
 
 const CAMADAS = [
   { grupo: "Eleição 2026", id: "disputa26", rotulo: "Lula x Flávio", campo: "parte_lula_2026", tipo: "disputa", adversario: "Flávio" },
   { grupo: "Eleição 2026", id: "lula26", rotulo: "Lula", campo: "pct_lula_2026", campoAbsoluto: "votos_lula_2026", tipo: "jenks", escala: "principais" },
   { grupo: "Eleição 2026", id: "flavio26", rotulo: "Flávio Bolsonaro", campo: "pct_flavio_2026", campoAbsoluto: "votos_flavio_2026", tipo: "jenks", escala: "principais" },
-  { grupo: "Eleição 2026", id: "cury26", rotulo: "Augusto Cury", campo: "pct_cury_2026", campoAbsoluto: "votos_cury_2026", tipo: "jenks" },
-  { grupo: "Eleição 2026", id: "renan26", rotulo: "Renan Santos", campo: "pct_renan_2026", campoAbsoluto: "votos_renan_2026", tipo: "jenks" },
-  { grupo: "Eleição 2026", id: "caiado26", rotulo: "Caiado", campo: "pct_caiado_2026", campoAbsoluto: "votos_caiado_2026", tipo: "jenks" },
+  { grupo: "Eleição 2026", id: "cury26", rotulo: "Augusto Cury", campo: "pct_cury_2026", campoAbsoluto: "votos_cury_2026", tipo: "jenks", escala: "demais" },
+  { grupo: "Eleição 2026", id: "renan26", rotulo: "Renan Santos", campo: "pct_renan_2026", campoAbsoluto: "votos_renan_2026", tipo: "jenks", escala: "demais" },
+  { grupo: "Eleição 2026", id: "caiado26", rotulo: "Caiado", campo: "pct_caiado_2026", campoAbsoluto: "votos_caiado_2026", tipo: "jenks", escala: "demais" },
   { grupo: "Eleição 2026", id: "inv26", rotulo: "Inválidos", campo: "pct_invalidos_2026", campoAbsoluto: "votos_invalidos_2026", tipo: "jenks", escala: "invalidos" },
   { grupo: "Eleição 2026", id: "nc26", rotulo: "Não comparecimento", campo: "pct_nc_2026", campoAbsoluto: "votos_nc_2026", tipo: "jenks", escala: "comparecimento" },
   { grupo: "Eleição 2022", id: "disputa22", rotulo: "Lula x Bolsonaro", campo: "parte_lula_2022", tipo: "disputa", adversario: "Bolsonaro" },
   { grupo: "Eleição 2022", id: "lula22", rotulo: "Lula", campo: "pct_lula_2022", campoAbsoluto: "votos_lula_2022", tipo: "jenks", escala: "principais" },
   { grupo: "Eleição 2022", id: "bolsonaro22", rotulo: "Bolsonaro", campo: "pct_bolsonaro_2022", campoAbsoluto: "votos_bolsonaro_2022", tipo: "jenks", escala: "principais" },
-  { grupo: "Eleição 2022", id: "tebet22", rotulo: "Tebet", campo: "pct_tebet_2022", campoAbsoluto: "votos_tebet_2022", tipo: "jenks" },
-  { grupo: "Eleição 2022", id: "ciro22", rotulo: "Ciro", campo: "pct_ciro_2022", campoAbsoluto: "votos_ciro_2022", tipo: "jenks" },
+  { grupo: "Eleição 2022", id: "tebet22", rotulo: "Tebet", campo: "pct_tebet_2022", campoAbsoluto: "votos_tebet_2022", tipo: "jenks", escala: "demais" },
+  { grupo: "Eleição 2022", id: "ciro22", rotulo: "Ciro", campo: "pct_ciro_2022", campoAbsoluto: "votos_ciro_2022", tipo: "jenks", escala: "demais" },
   { grupo: "Eleição 2022", id: "inv22", rotulo: "Inválidos", campo: "pct_invalidos_2022", campoAbsoluto: "votos_invalidos_2022", tipo: "jenks", escala: "invalidos" },
   { grupo: "Eleição 2022", id: "nc22", rotulo: "Não comparecimento", campo: "pct_nc_2022", campoAbsoluto: "votos_nc_2022", tipo: "jenks", escala: "comparecimento" },
   { grupo: "Comparação 2026x2022", id: "difLula", rotulo: "Lula", campo: "dif_pct_lula", campoAbsoluto: "dif_lula", tipo: "div", escalaDif: "difPrincipais" },
@@ -176,12 +177,33 @@ function quebrasNaturais(valores, classes) {
   return quebras;
 }
 
+function corSequencialContinua(valor, minimo, maximo) {
+  const t = maximo === minimo ? 1 : Math.min(1, Math.max(0, (valor - minimo) / (maximo - minimo)));
+  if (t < 0.5) return interpolar("#ffffcc", "#fd8d3c", t / 0.5);
+  return interpolar("#fd8d3c", "#800026", (t - 0.5) / 0.5);
+}
+
 function coresSequenciais(quantidade) {
   return Array.from({ length: quantidade }, (_, i) => {
     const t = quantidade === 1 ? 1 : i / (quantidade - 1);
-    if (t < 0.5) return interpolar("#ffffcc", "#fd8d3c", t / 0.5);
-    return interpolar("#fd8d3c", "#800026", (t - 0.5) / 0.5);
+    return corSequencialContinua(t, 0, 1);
   });
+}
+
+function corIpvs(valor) {
+  const ultimo = ESTRATOS_IPVS.length - 1;
+  const posicao = Math.min(ultimo, Math.max(0, Number(valor) - 1));
+  const indiceCor = Math.floor(posicao);
+  if (indiceCor >= ultimo) return ESTRATOS_IPVS[ultimo].cor;
+  return interpolar(ESTRATOS_IPVS[indiceCor].cor, ESTRATOS_IPVS[indiceCor + 1].cor, posicao - indiceCor);
+}
+
+function gradiente(cores) {
+  return `linear-gradient(to right, ${cores.join(", ")})`;
+}
+
+function amostras(quantidade, corEm) {
+  return Array.from({ length: quantidade }, (_, i) => corEm(i / (quantidade - 1)));
 }
 
 const ESPECTRAL = [
@@ -200,16 +222,23 @@ function corEspectral(valor, minimo, maximo) {
 function prepararEscalas(features, campoDe, destino) {
   const grupos = new Map();
   CAMADAS.filter((camada) => camada.escala && campoDe(camada)).forEach((camada) => {
-    const lista = grupos.get(camada.escala) || [];
+    const chave = chaveDaEscala(camada);
+    const lista = grupos.get(chave) || [];
     lista.push(...valoresDaCamada(features, campoDe(camada), camada.campo));
-    grupos.set(camada.escala, lista);
+    grupos.set(chave, lista);
   });
-  grupos.forEach((valores, nome) => {
-    const classes = nome === "principais" ? CLASSES_PRINCIPAIS : CLASSES_NATURAIS;
+  grupos.forEach((valores, chave) => {
+    const amostra = CAMADAS.find((camada) => camada.escala && chaveDaEscala(camada) === chave);
+    const nome = amostra.escala;
+    const classes = nome === "principais"
+      ? CLASSES_PRINCIPAIS
+      : (nome === "demais" || nome === "invalidos" || nome === "comparecimento")
+        ? CLASSES_DEZ
+        : CLASSES_NATURAIS;
     const quebras = quebrasNaturais(valores, classes);
     const cores = coresSequenciais(quebras.length - 1);
-    CAMADAS.filter((camada) => camada.escala === nome).forEach((camada) => {
-      camada[destino.def] = { tipo: "jenks", quebras, compartilhada: true };
+    CAMADAS.filter((camada) => camada.escala && chaveDaEscala(camada) === chave).forEach((camada) => {
+      camada[destino.def] = { tipo: "jenks", quebras, compartilhada: nome !== "demais" };
       camada[destino.cores] = cores;
     });
   });
@@ -221,9 +250,78 @@ function prepararEscalas(features, campoDe, destino) {
   });
 }
 
+function candidatoPercentual(camada) {
+  return camada.tipo === "jenks" && camada.escala !== "invalidos" && camada.escala !== "comparecimento";
+}
+
+function quebrasDeCinco(valores) {
+  const minimo = Math.min(...valores);
+  const maximo = Math.max(...valores);
+  const inicio = Math.floor((minimo + 1e-9) * 20) / 20;
+  let fim = Math.ceil((maximo - 1e-9) * 20) / 20;
+  if (fim <= inicio) fim = Math.round((inicio + 0.05) * 1000) / 1000;
+  const quebras = [];
+  for (let valor = inicio; valor < fim - 1e-9; valor = Math.round((valor + 0.05) * 1000) / 1000) {
+    quebras.push(Math.round(valor * 1000) / 1000);
+  }
+  quebras.push(Math.round(fim * 1000) / 1000);
+  return quebras;
+}
+
+function quebrasDeUmEMeio(valores) {
+  const minimo = Math.min(...valores);
+  const maximo = Math.max(...valores);
+  const passo = 0.015;
+  const teto = 0.15;
+  const arredondar = (valor) => Math.round(valor * 1000) / 1000;
+  const inicio = arredondar(Math.max(0, Math.floor((minimo + 1e-9) / passo) * passo));
+  const fimObservado = Math.ceil((maximo - 1e-9) / passo) * passo;
+  let fimFino = arredondar(Math.min(teto, Math.max(inicio + passo, fimObservado)));
+  if (fimFino <= inicio) fimFino = arredondar(inicio + passo);
+  const quebras = [];
+  for (let valor = inicio; valor < fimFino - 1e-9; valor = arredondar(valor + passo)) {
+    quebras.push(arredondar(valor));
+  }
+  quebras.push(fimFino);
+  if (maximo > teto + 1e-9) {
+    const fim = arredondar(Math.ceil((maximo - 1e-9) / 0.05) * 0.05);
+    for (let valor = arredondar(teto + 0.05); valor < fim - 1e-9; valor = arredondar(valor + 0.05)) {
+      quebras.push(valor);
+    }
+    quebras.push(fim);
+  }
+  return quebras;
+}
+
+function chaveDaEscala(camada) {
+  if (camada.escala === "demais") return camada.id;
+  return camada.escala || camada.id;
+}
+
+function prepararCinco(features) {
+  const grupos = new Map();
+  CAMADAS.filter((camada) => candidatoPercentual(camada) && camada.escala === "principais").forEach((camada) => {
+    const chave = chaveDaEscala(camada);
+    const lista = grupos.get(chave) || [];
+    lista.push(...valoresDaCamada(features, camada.campo, camada.campo));
+    grupos.set(chave, lista);
+  });
+  grupos.forEach((valores, chave) => {
+    const dono = CAMADAS.find((camada) => candidatoPercentual(camada) && chaveDaEscala(camada) === chave);
+    const fino = dono && dono.escala === "demais";
+    const quebras = fino ? quebrasDeUmEMeio(valores) : quebrasDeCinco(valores);
+    const cores = coresSequenciais(quebras.length - 1);
+    CAMADAS.filter((camada) => candidatoPercentual(camada) && chaveDaEscala(camada) === chave).forEach((camada) => {
+      camada.defCinco = { tipo: "jenks", quebras, compartilhada: camada.escala === "principais", fino };
+      camada.coresCinco = cores;
+    });
+  });
+}
+
 function prepararCamadas(features) {
   prepararEscalas(features, (camada) => camada.campo, { def: "def", cores: "cores" });
   prepararEscalas(features, (camada) => camada.campoAbsoluto, { def: "defAbsoluto", cores: "coresAbsoluto" });
+  prepararCinco(features);
   CAMADAS.filter((camada) => camada.tipo === "reais").forEach((camada) => {
     const valores = valoresDaCamada(features, camada.campo, camada.campo);
     const quebras = quebrasNaturais(valores, CLASSES_NATURAIS);
@@ -295,7 +393,8 @@ function formatarRenda(valor) {
   return Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 
-const mapa = L.map("mapa");
+const mapa = L.map("mapa", { zoomControl: false });
+L.control.zoom({ position: "topright" }).addTo(mapa);
 L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
   attribution: "Tiles &copy; Esri",
   maxZoom: 16,
@@ -353,10 +452,14 @@ function estilo(feature, destaque = false) {
     }
   } else if (camadaAtiva.tipo === "jenks" || camadaAtiva.tipo === "reais") {
     const atual = vista(camadaAtiva);
-    if (atual.def && atual.cores) {
-      const i = indice(valorVisivel(feature.properties, camadaAtiva), atual);
+    const cinco = camadaAtiva.tipo === "jenks" && !atual.absoluto && camadaAtiva.defCinco;
+    const definicao = cinco
+      ? { def: camadaAtiva.defCinco, cores: camadaAtiva.coresCinco }
+      : atual;
+    if (definicao.def && definicao.cores) {
+      const i = indice(valorVisivel(feature.properties, camadaAtiva), definicao);
       if (i !== null) {
-        fillColor = atual.cores[i];
+        fillColor = definicao.cores[i];
         temDado = true;
       }
     }
@@ -445,13 +548,57 @@ function desenharLegenda() {
       faixa.appendChild(parte);
     });
     marcas.className = "marcas passos";
-    etiquetas.forEach((texto, indice) => {
+    etiquetas.forEach((texto, indiceEtiqueta) => {
       const marca = document.createElement("span");
       marca.textContent = texto;
-      marca.title = rotuloDisputa(FAIXAS_DISPUTA[indice], adversario);
+      marca.title = rotuloDisputa(FAIXAS_DISPUTA[indiceEtiqueta], adversario);
       marcas.appendChild(marca);
     });
     nota.textContent = `Escala de 5 em 5 pontos até 75% da soma. À esquerda, Lula; à direita, ${adversario}. As cores se encontram no meio.`;
+    return;
+  }
+  if (camadaAtiva.tipo === "jenks" && !vista(camadaAtiva).absoluto && camadaAtiva.defCinco) {
+    const quebras = camadaAtiva.defCinco.quebras;
+    camadaAtiva.coresCinco.forEach((cor, i) => {
+      const parte = document.createElement("span");
+      parte.style.background = cor;
+      parte.title = `${formatarPercentual(quebras[i])} a ${formatarPercentual(quebras[i + 1])}`;
+      faixa.appendChild(parte);
+    });
+    marcas.className = "marcas passos";
+    camadaAtiva.coresCinco.forEach((_, i) => {
+      const marca = document.createElement("span");
+      const pontos = Math.round(quebras[i] * 1000) / 10;
+      marca.textContent = `${pontos.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+      marcas.appendChild(marca);
+    });
+    const notaEscala = camadaAtiva.defCinco.fino
+      ? "Escala de 1,5 em 1,5 pontos percentuais, entre o menor e o maior valor deste candidato. A cor mais escura é o topo dele."
+      : `Escala de 5 em 5 pontos percentuais.${camadaAtiva.escala === "principais" ? " Mesma escala de Lula e Bolsonaro, nos dois anos." : ""}`;
+    nota.textContent = notaEscala;
+    return;
+  }
+  if ((camadaAtiva.escala === "demais" || camadaAtiva.escala === "invalidos" || camadaAtiva.escala === "comparecimento") && vista(camadaAtiva).def) {
+    const atual = vista(camadaAtiva);
+    const formatar = atual.absoluto ? formatarVotos : formatarPercentual;
+    const quebras = atual.def.quebras;
+    atual.cores.forEach((cor, i) => {
+      const parte = document.createElement("span");
+      parte.style.background = cor;
+      parte.title = `${formatar(quebras[i])} a ${formatar(quebras[i + 1])}`;
+      faixa.appendChild(parte);
+    });
+    marcas.className = "marcas passos";
+    atual.cores.forEach((_, i) => {
+      const marca = document.createElement("span");
+      marca.textContent = formatar(quebras[i]);
+      marcas.appendChild(marca);
+    });
+    const unidade = atual.absoluto ? " A escala está em votos." : "";
+    const notaEscala = camadaAtiva.escala === "demais"
+      ? "Dez classes por quebras naturais, entre o menor e o maior valor deste candidato. A cor mais escura é o topo dele."
+      : "Dez classes por quebras naturais, calculadas com 2022 e 2026 juntos. A mesma escala vale nos dois anos.";
+    nota.textContent = `${notaEscala}${unidade}`;
     return;
   }
   if (camadaAtiva.def && (camadaAtiva.def.tipo === "jenks" || camadaAtiva.def.tipo === "reais")) {
@@ -479,7 +626,11 @@ function desenharLegenda() {
     const atual = vista(camadaAtiva);
     const escala = atual.def;
     const formatar = atual.absoluto ? formatarVotos : formatarPercentual;
-    faixa.style.background = `linear-gradient(to right, ${ESPECTRAL.join(", ")})`;
+    ESPECTRAL.forEach((cor) => {
+      const parte = document.createElement("span");
+      parte.style.background = cor;
+      faixa.appendChild(parte);
+    });
     const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
     const marcaZero = atual.absoluto ? "0" : "0%";
     marcas.innerHTML = `<span>${formatar(escala.min)}</span><span class="zero" style="left:${zero}%">${marcaZero}</span><span>${formatar(escala.max)}</span>`;
@@ -514,25 +665,40 @@ function aplicarCamada(id) {
   desenharLegenda();
 }
 
+function camadasDoGrupo(nome) {
+  return CAMADAS.filter((item) => item.grupo === nome);
+}
+
+function preencherCamadas(grupo, rotuloPreferido) {
+  const select = document.getElementById("camada");
+  const lista = camadasDoGrupo(grupo);
+  select.replaceChildren();
+  lista.forEach((item) => {
+    const opcao = document.createElement("option");
+    opcao.value = item.id;
+    opcao.textContent = item.rotulo;
+    select.appendChild(opcao);
+  });
+  const igual = lista.find((item) => item.rotulo === rotuloPreferido);
+  select.value = (igual || lista[0]).id;
+  aplicarCamada(select.value);
+}
+
 function montarPainel() {
-  const painel = document.getElementById("grupos");
-  const grupos = [...new Set(CAMADAS.map((item) => item.grupo))];
-  grupos.forEach((nome) => {
-    const bloco = document.createElement("section");
-    bloco.className = "grupo";
-    bloco.innerHTML = `<h2>${nome}</h2>`;
-    CAMADAS.filter((item) => item.grupo === nome).forEach((item) => {
-      const rotulo = document.createElement("label");
-      rotulo.className = "opcao";
-      rotulo.innerHTML = `<input type="radio" name="camada" value="${item.id}"> <span>${item.rotulo}</span>`;
-      bloco.appendChild(rotulo);
-    });
-    painel.appendChild(bloco);
+  const grupo = document.getElementById("grupo");
+  const camada = document.getElementById("camada");
+  [...new Set(CAMADAS.map((item) => item.grupo))].forEach((nome) => {
+    const opcao = document.createElement("option");
+    opcao.value = nome;
+    opcao.textContent = nome;
+    grupo.appendChild(opcao);
   });
-  painel.addEventListener("change", (evento) => {
-    if (evento.target.name === "camada") aplicarCamada(evento.target.value);
+  grupo.addEventListener("change", () => {
+    const atual = CAMADAS.find((item) => item.id === camada.value);
+    preencherCamadas(grupo.value, atual ? atual.rotulo : "");
   });
-  painel.querySelector("input").checked = true;
+  camada.addEventListener("change", () => aplicarCamada(camada.value));
+  preencherCamadas(grupo.value, "");
 }
 
 function montarInterruptor() {
@@ -545,7 +711,6 @@ function montarInterruptor() {
 
 montarPainel();
 montarInterruptor();
-desenharLegenda();
 
 fetch("dados/grade.geojson?v=21")
   .then((resposta) => resposta.json())

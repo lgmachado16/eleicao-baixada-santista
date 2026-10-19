@@ -3,32 +3,46 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Eleições na Baixada Santista</title>
+  <title>Eleições Baixada Santista</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/estilo.css?v=6">
+  <link rel="stylesheet" href="css/estilo.css?v=8">
 </head>
 <body class="mapa">
-  <aside class="painel">
-    <header class="topo">
-      <h1>Baixada Santista</h1>
-      <a href="grafico.html">Gráfico</a>
-    </header>
-    <p class="nota">Em cada eleição, a primeira camada mostra quem teve mais votos na soma dos dois principais: Lula e Flávio em 2026, Lula e Bolsonaro em 2022, na mesma escala. Lula e Bolsonaro, nos dois anos, usam a mesma quebra natural. Inválidos usam a mesma escala em 2022 e em 2026, e o não comparecimento também. As comparações usam a diferença dos percentuais, numa escala contínua de −10% a +10%. Com o interruptor de votos absolutos, a comparação mostra a diferença de votos, 2026 menos 2022. O IPVS da célula é a classe mais frequente dos setores cujo centroide cai nela, do verde ao vermelho. Passe o mouse sobre um hexágono para ver os demais valores daquele grupo.</p>
-    <label class="interruptor">
-      <input type="checkbox" id="modo-valor">
-      <span class="trilho" aria-hidden="true"></span>
-      <span>Votos absolutos</span>
-    </label>
-    <div id="grupos"></div>
-    <section class="legenda">
-      <h2 id="legenda-titulo"></h2>
-      <div id="faixa" class="faixa"></div>
-      <div id="marcas" class="marcas"></div>
-      <p class="nota" id="legenda-nota"></p>
-    </section>
-  </aside>
   <div id="mapa"></div>
+  <header class="barra" id="painel">
+    <h1>Eleições Baixada Santista</h1>
+    <div class="comandos">
+      <label class="menu">Tema
+        <select id="grupo"></select>
+      </label>
+      <label class="menu">Camada
+        <select id="camada"></select>
+      </label>
+      <label class="interruptor">
+        <input type="checkbox" id="modo-valor">
+        <span class="trilho" aria-hidden="true"></span>
+        <span>Votos absolutos</span>
+      </label>
+      <a class="atalho" href="metodologia.html">Metodologia</a>
+      <a class="atalho" href="grafico.html">Gráfico</a>
+    </div>
+  </header>
+  <section class="legenda">
+    <div class="legenda-topo">
+      <h2 id="legenda-titulo"></h2>
+      <details class="como-ler">
+        <summary>Como ler</summary>
+        <p class="nota">Em cada eleição, a primeira camada mostra quem teve mais votos na soma dos dois principais: Lula e Flávio em 2026, Lula e Bolsonaro em 2022, na mesma escala. Lula e Bolsonaro, nos dois anos, usam a mesma escala de 5 em 5 pontos percentuais. Os demais candidatos usam dez classes por quebras naturais, cada um entre o seu menor e o seu maior valor. Inválidos e o não comparecimento também usam dez classes por quebras naturais, com a mesma escala em 2022 e em 2026. As comparações usam a diferença dos percentuais, numa escala contínua de −10% a +10%. Com o interruptor de votos absolutos, a comparação mostra a diferença de votos, 2026 menos 2022. O IPVS da célula é a classe mais frequente dos setores cujo centroide cai nela, do verde ao vermelho. Passe o mouse sobre um hexágono para ver os demais valores daquele grupo. <a href="metodologia.html">Metodologia</a>.</p>
+      </details>
+    </div>
+    <div id="faixa" class="faixa"></div>
+    <div id="marcas" class="marcas"></div>
+    <p class="nota" id="legenda-nota"></p>
+  </section>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/mapa.js?v=26"></script>
+  <script src="js/mapa.js?v=27"></script>
 </body>
 </html>

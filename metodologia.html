@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Metodologia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilo.css?v=8">
+</head>
+<body class="grafico">
+  <nav class="topo">
+    <h1>Metodologia</h1>
+    <div class="atalhos">
+      <a href="index.html">Mapa</a>
+      <a href="grafico.html">Gráfico</a>
+    </div>
+  </nav>
+  <article>
+<h2>Recorte</h2>
+<p>Primeiro turno de 2022 e de 2026 nos nove municípios da Baixada Santista: Bertioga, Cubatão, Guarujá, Itanhaém, Mongaguá, Peruíbe, Praia Grande, Santos e São Vicente. A unidade de origem é o setor censitário. O mapa mostra a grade hexagonal. A célula entra quando o centróide cai num desses municípios.</p>
+<h2>Do local de votação ao hexágono</h2>
+<p>O eleitorado do local é distribuído aos setores do mesmo município. O voto do local segue o peso <code>w_ij</code>, e o setor soma as partes que recebe. Cada setor vai para o hexágono que contém o seu centróide. Os votos da célula são a soma desses setores.</p>
+<h2>O que cada percentual mede</h2>
+<ul>
+<li>Candidato: votos do candidato sobre os votos válidos.</li>
+<li>Inválidos: branco mais nulo, sobre o total de votos.</li>
+<li>Não comparecimento: aptos menos votos totais, sobre os aptos.</li>
+</ul>
+<p>A disputa Lula × Flávio, ou Lula × Bolsonaro, é a parte de Lula na soma dos dois. A comparação é 2026 menos 2022. Flávio é comparado a Bolsonaro. A célula só entra na comparação quando as duas bases são positivas.</p>
+<h2>Como a cor é escolhida</h2>
+<ul>
+<li>Disputa: faixas de 5 em 5 pontos até 75% da soma. Vermelho é Lula e dourado é o adversário.</li>
+<li>Lula e Bolsonaro/Flávio, nos dois anos: a mesma escala de 5 em 5 pontos percentuais.</li>
+<li>Demais candidatos: dez classes por quebras naturais, cada um entre o próprio mínimo e o próprio máximo. O vermelho escuro é o topo dele e não se compara ao dos outros.</li>
+<li>Inválidos e não comparecimento: dez classes por quebras naturais, calculadas com 2022 e 2026 juntos. A mesma escala vale nos dois anos.</li>
+<li>Comparação de percentuais: escala contínua de −10% a +10%. Azul é queda e vermelho é alta. Com votos absolutos, a comparação usa a diferença de votos numa escala simétrica.</li>
+<li>Renda: mediana, na célula, do rendimento nominal mediano do responsável nos setores cujo centróide cai nela, em cinco quebras naturais. As faixas dos gráficos são essas.</li>
+<li>IPVS: classe mais frequente desses setores, de 1 a 6. No empate fica a classe mais alta.</li>
+</ul>
+<h2>Limites</h2>
+<p>O Censo é de 2022 e o eleitorado é de 2026. A faixa 15–19 foi repartida por igual entre as cinco idades, dentro de cada setor. O voto é facultativo dos 16 aos 17 anos e a partir dos 70. Células <code>X</code> e os 88 totais suprimidos ficam de fora da capacidade, sem imputação. Setores sem morador empurram o carregamento para o centróide seguinte ou para a folga. A folga mede o quanto o eleitorado de 2026 ainda não cabe na população de 16 anos ou mais dos setores mais próximos pelo centróide, dentro do município. A proximidade de um setor do outro lado da divisa não reduz essa folga.</p>
+</article>
+</body>
+</html>

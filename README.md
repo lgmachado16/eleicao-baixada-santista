@@ -4,3 +4,4 @@ Mapa percentual da grade hexagonal e gráfico da variação de Lula com a renda 
 
 - [Mapa](index.html)
 - [Gráfico](grafico.html)
+- [Metodologia](metodologia.html)
