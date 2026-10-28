@@ -19,23 +19,24 @@
   </nav>
   <article>
 <h2>Recorte</h2>
-<p>Primeiro turno de 2022 e de 2026 nos nove municípios da Baixada Santista: Bertioga, Cubatão, Guarujá, Itanhaém, Mongaguá, Peruíbe, Praia Grande, Santos e São Vicente. A unidade de origem é o setor censitário. O mapa mostra a grade hexagonal. A célula entra quando o centróide cai num desses municípios.</p>
+<p>Primeiro e segundo turnos de 2022 e de 2026 nos nove municípios da Baixada Santista: Bertioga, Cubatão, Guarujá, Itanhaém, Mongaguá, Peruíbe, Praia Grande, Santos e São Vicente. A unidade de origem é o setor censitário. O mapa mostra a grade hexagonal. A célula entra quando o centróide cai num desses municípios.</p>
 <h2>Do local de votação ao hexágono</h2>
 <p>O eleitorado do local é distribuído aos setores do mesmo município. O voto do local segue o peso <code>w_ij</code>, e o setor soma as partes que recebe. Cada setor vai para o hexágono que contém o seu centróide. Os votos da célula são a soma desses setores.</p>
+<p>O voto de cada turno entra no local do eleitorado daquele turno, pela zona e pela seção. O código de local impresso no arquivo de votos fica de fora quando ainda é o número antigo. Em 2026, na Baixada, local e coordenada não mudam entre os turnos, e os dois turnos usam a mesma matriz de pesos. Em 2022, o segundo turno tem matriz própria: cinco seções de Guarujá mudaram de escola. Quando o local de 2022 existe no arquivo conferido de coordenadas, essa coordenada prevalece.</p>
 <h2>O que cada percentual mede</h2>
 <ul>
 <li>Candidato: votos do candidato sobre os votos válidos.</li>
 <li>Inválidos: branco mais nulo, sobre o total de votos.</li>
 <li>Não comparecimento: aptos menos votos totais, sobre os aptos.</li>
 </ul>
-<p>A disputa Lula × Flávio, ou Lula × Bolsonaro, é a parte de Lula na soma dos dois. A comparação é 2026 menos 2022. Flávio é comparado a Bolsonaro. A célula só entra na comparação quando as duas bases são positivas.</p>
+<p>A disputa Lula × Flávio, ou Lula × Bolsonaro, é a parte de Lula na soma dos dois. A comparação entre anos é 2026 menos 2022, no turno escolhido. Flávio é comparado a Bolsonaro. A comparação entre turnos é o segundo turno menos o primeiro, na eleição escolhida. Nas duas, o acréscimo é a diferença dos votos, não a diferença dos percentuais. Sem o interruptor, o mapa mostra a taxa: essa diferença dividida pelos votos do ponto de partida, o 1º turno ou 2022. Com o interruptor, mostra a mesma diferença em quantidade. A célula entra quando as duas bases são positivas. A taxa só aparece quando o ponto de partida tem votos.</p>
 <h2>Como a cor é escolhida</h2>
 <ul>
 <li>Disputa: faixas de 5 em 5 pontos até 75% da soma. Vermelho é Lula e dourado é o adversário.</li>
 <li>Lula e Bolsonaro/Flávio, nos dois anos: a mesma escala de 5 em 5 pontos percentuais.</li>
 <li>Demais candidatos: dez classes por quebras naturais, cada um entre o próprio mínimo e o próprio máximo. O vermelho escuro é o topo dele e não se compara ao dos outros.</li>
 <li>Inválidos e não comparecimento: dez classes por quebras naturais, calculadas com 2022 e 2026 juntos. A mesma escala vale nos dois anos.</li>
-<li>Comparação de percentuais: escala contínua de −10% a +10%. Azul é queda e vermelho é alta. Com votos absolutos, a comparação usa a diferença de votos numa escala simétrica.</li>
+<li>Comparação: taxa ou quantidade, numa escala simétrica. A taxa é a diferença de votos dividida pelos votos do ponto de partida. A quantidade é essa diferença. Azul é queda e vermelho é alta. Entre anos, o sentido é 2026 menos 2022, no turno escolhido. Entre turnos, o sentido é o segundo menos o primeiro, na eleição escolhida. Lula e o adversário compartilham a escala daquela comparação e daquela visualização.</li>
 <li>Renda: mediana, na célula, do rendimento nominal mediano do responsável nos setores cujo centróide cai nela, em cinco quebras naturais. As faixas dos gráficos são essas.</li>
 <li>IPVS: classe mais frequente desses setores, de 1 a 6. No empate fica a classe mais alta.</li>
 </ul>

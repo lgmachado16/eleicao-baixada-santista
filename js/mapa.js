@@ -3,28 +3,56 @@ const CLASSES_NATURAIS = 5;
 const CLASSES_PRINCIPAIS = 6;
 const CLASSES_DEZ = 10;
 
+const TURNOS = [
+  { id: "1", rotulo: "1º turno" },
+  { id: "2", rotulo: "2º turno" },
+  { id: "delta", rotulo: "2º − 1º" },
+];
+
 const CAMADAS = [
-  { grupo: "Eleição 2026", id: "disputa26", rotulo: "Lula x Flávio", campo: "parte_lula_2026", tipo: "disputa", adversario: "Flávio" },
-  { grupo: "Eleição 2026", id: "lula26", rotulo: "Lula", campo: "pct_lula_2026", campoAbsoluto: "votos_lula_2026", tipo: "jenks", escala: "principais" },
-  { grupo: "Eleição 2026", id: "flavio26", rotulo: "Flávio Bolsonaro", campo: "pct_flavio_2026", campoAbsoluto: "votos_flavio_2026", tipo: "jenks", escala: "principais" },
-  { grupo: "Eleição 2026", id: "cury26", rotulo: "Augusto Cury", campo: "pct_cury_2026", campoAbsoluto: "votos_cury_2026", tipo: "jenks", escala: "demais" },
-  { grupo: "Eleição 2026", id: "renan26", rotulo: "Renan Santos", campo: "pct_renan_2026", campoAbsoluto: "votos_renan_2026", tipo: "jenks", escala: "demais" },
-  { grupo: "Eleição 2026", id: "caiado26", rotulo: "Caiado", campo: "pct_caiado_2026", campoAbsoluto: "votos_caiado_2026", tipo: "jenks", escala: "demais" },
-  { grupo: "Eleição 2026", id: "inv26", rotulo: "Inválidos", campo: "pct_invalidos_2026", campoAbsoluto: "votos_invalidos_2026", tipo: "jenks", escala: "invalidos" },
-  { grupo: "Eleição 2026", id: "nc26", rotulo: "Não comparecimento", campo: "pct_nc_2026", campoAbsoluto: "votos_nc_2026", tipo: "jenks", escala: "comparecimento" },
-  { grupo: "Eleição 2022", id: "disputa22", rotulo: "Lula x Bolsonaro", campo: "parte_lula_2022", tipo: "disputa", adversario: "Bolsonaro" },
-  { grupo: "Eleição 2022", id: "lula22", rotulo: "Lula", campo: "pct_lula_2022", campoAbsoluto: "votos_lula_2022", tipo: "jenks", escala: "principais" },
-  { grupo: "Eleição 2022", id: "bolsonaro22", rotulo: "Bolsonaro", campo: "pct_bolsonaro_2022", campoAbsoluto: "votos_bolsonaro_2022", tipo: "jenks", escala: "principais" },
-  { grupo: "Eleição 2022", id: "tebet22", rotulo: "Tebet", campo: "pct_tebet_2022", campoAbsoluto: "votos_tebet_2022", tipo: "jenks", escala: "demais" },
-  { grupo: "Eleição 2022", id: "ciro22", rotulo: "Ciro", campo: "pct_ciro_2022", campoAbsoluto: "votos_ciro_2022", tipo: "jenks", escala: "demais" },
-  { grupo: "Eleição 2022", id: "inv22", rotulo: "Inválidos", campo: "pct_invalidos_2022", campoAbsoluto: "votos_invalidos_2022", tipo: "jenks", escala: "invalidos" },
-  { grupo: "Eleição 2022", id: "nc22", rotulo: "Não comparecimento", campo: "pct_nc_2022", campoAbsoluto: "votos_nc_2022", tipo: "jenks", escala: "comparecimento" },
-  { grupo: "Comparação 2026x2022", id: "difLula", rotulo: "Lula", campo: "dif_pct_lula", campoAbsoluto: "dif_lula", tipo: "div", escalaDif: "difPrincipais" },
-  { grupo: "Comparação 2026x2022", id: "difBolsonaro", rotulo: "Bolsonaro / Flávio", campo: "dif_pct_bolsonaro", campoAbsoluto: "dif_bolsonaro", tipo: "div", escalaDif: "difPrincipais" },
-  { grupo: "Comparação 2026x2022", id: "difInv", rotulo: "Inválidos", campo: "dif_pct_invalidos", campoAbsoluto: "dif_invalidos", tipo: "div", escalaDif: "difInvalidos" },
-  { grupo: "Comparação 2026x2022", id: "difNc", rotulo: "Não comparecimento", campo: "dif_pct_nc", campoAbsoluto: "dif_nc", tipo: "div", escalaDif: "difComparecimento" },
-  { grupo: "Rendimento", id: "renda", rotulo: "Nominal mediano", campo: "renda_mediana", tipo: "reais" },
-  { grupo: "Vulnerabilidade", id: "ipvs", rotulo: "IPVS", campo: "ipvs", tipo: "estrato" },
+  { eleicao: "2026", turno: "1", id: "disputa26", rotulo: "Lula x Flávio", campo: "parte_lula_2026", tipo: "disputa", adversario: "Flávio" },
+  { eleicao: "2026", turno: "1", id: "lula26", rotulo: "Lula", campo: "pct_lula_2026", campoAbsoluto: "votos_lula_2026", tipo: "jenks", escala: "principais" },
+  { eleicao: "2026", turno: "1", id: "flavio26", rotulo: "Flávio Bolsonaro", campo: "pct_flavio_2026", campoAbsoluto: "votos_flavio_2026", tipo: "jenks", escala: "principais" },
+  { eleicao: "2026", turno: "1", id: "cury26", rotulo: "Augusto Cury", campo: "pct_cury_2026", campoAbsoluto: "votos_cury_2026", tipo: "jenks", escala: "demais" },
+  { eleicao: "2026", turno: "1", id: "renan26", rotulo: "Renan Santos", campo: "pct_renan_2026", campoAbsoluto: "votos_renan_2026", tipo: "jenks", escala: "demais" },
+  { eleicao: "2026", turno: "1", id: "caiado26", rotulo: "Caiado", campo: "pct_caiado_2026", campoAbsoluto: "votos_caiado_2026", tipo: "jenks", escala: "demais" },
+  { eleicao: "2026", turno: "1", id: "inv26", rotulo: "Inválidos", campo: "pct_invalidos_2026", campoAbsoluto: "votos_invalidos_2026", tipo: "jenks", escala: "invalidos" },
+  { eleicao: "2026", turno: "1", id: "nc26", rotulo: "Não comparecimento", campo: "pct_nc_2026", campoAbsoluto: "votos_nc_2026", tipo: "jenks", escala: "comparecimento" },
+  { eleicao: "2026", turno: "2", id: "disputa26b", rotulo: "Lula x Flávio", campo: "parte_lula_2026_2t", tipo: "disputa", adversario: "Flávio" },
+  { eleicao: "2026", turno: "2", id: "lula26b", rotulo: "Lula", campo: "pct_lula_2026_2t", campoAbsoluto: "votos_lula_2026_2t", tipo: "jenks", escala: "principais" },
+  { eleicao: "2026", turno: "2", id: "flavio26b", rotulo: "Flávio Bolsonaro", campo: "pct_flavio_2026_2t", campoAbsoluto: "votos_flavio_2026_2t", tipo: "jenks", escala: "principais" },
+  { eleicao: "2026", turno: "2", id: "inv26b", rotulo: "Inválidos", campo: "pct_invalidos_2026_2t", campoAbsoluto: "votos_invalidos_2026_2t", tipo: "jenks", escala: "invalidos" },
+  { eleicao: "2026", turno: "2", id: "nc26b", rotulo: "Não comparecimento", campo: "pct_nc_2026_2t", campoAbsoluto: "votos_nc_2026_2t", tipo: "jenks", escala: "comparecimento" },
+  { eleicao: "2026", turno: "delta", id: "difLulaT26", rotulo: "Lula", campo: "var_lula_turno_2026", campoAbsoluto: "dif_lula_turno_2026", tipo: "div", escalaDif: "difTurno26Principais", sentido: "2º turno menos 1º turno" },
+  { eleicao: "2026", turno: "delta", id: "difFlavioT26", rotulo: "Flávio", campo: "var_flavio_turno_2026", campoAbsoluto: "dif_flavio_turno_2026", tipo: "div", escalaDif: "difTurno26Principais", sentido: "2º turno menos 1º turno" },
+  { eleicao: "2026", turno: "delta", id: "difInvT26", rotulo: "Inválidos", campo: "var_invalidos_turno_2026", campoAbsoluto: "dif_invalidos_turno_2026", tipo: "div", escalaDif: "difTurno26Invalidos", sentido: "2º turno menos 1º turno" },
+  { eleicao: "2026", turno: "delta", id: "difNcT26", rotulo: "Não comparecimento", campo: "var_nc_turno_2026", campoAbsoluto: "dif_nc_turno_2026", tipo: "div", escalaDif: "difTurno26Comparecimento", sentido: "2º turno menos 1º turno" },
+  { eleicao: "2022", turno: "1", id: "disputa22", rotulo: "Lula x Bolsonaro", campo: "parte_lula_2022", tipo: "disputa", adversario: "Bolsonaro" },
+  { eleicao: "2022", turno: "1", id: "lula22", rotulo: "Lula", campo: "pct_lula_2022", campoAbsoluto: "votos_lula_2022", tipo: "jenks", escala: "principais" },
+  { eleicao: "2022", turno: "1", id: "bolsonaro22", rotulo: "Bolsonaro", campo: "pct_bolsonaro_2022", campoAbsoluto: "votos_bolsonaro_2022", tipo: "jenks", escala: "principais" },
+  { eleicao: "2022", turno: "1", id: "tebet22", rotulo: "Tebet", campo: "pct_tebet_2022", campoAbsoluto: "votos_tebet_2022", tipo: "jenks", escala: "demais" },
+  { eleicao: "2022", turno: "1", id: "ciro22", rotulo: "Ciro", campo: "pct_ciro_2022", campoAbsoluto: "votos_ciro_2022", tipo: "jenks", escala: "demais" },
+  { eleicao: "2022", turno: "1", id: "inv22", rotulo: "Inválidos", campo: "pct_invalidos_2022", campoAbsoluto: "votos_invalidos_2022", tipo: "jenks", escala: "invalidos" },
+  { eleicao: "2022", turno: "1", id: "nc22", rotulo: "Não comparecimento", campo: "pct_nc_2022", campoAbsoluto: "votos_nc_2022", tipo: "jenks", escala: "comparecimento" },
+  { eleicao: "2022", turno: "2", id: "disputa22b", rotulo: "Lula x Bolsonaro", campo: "parte_lula_2022_2t", tipo: "disputa", adversario: "Bolsonaro" },
+  { eleicao: "2022", turno: "2", id: "lula22b", rotulo: "Lula", campo: "pct_lula_2022_2t", campoAbsoluto: "votos_lula_2022_2t", tipo: "jenks", escala: "principais" },
+  { eleicao: "2022", turno: "2", id: "bolsonaro22b", rotulo: "Bolsonaro", campo: "pct_bolsonaro_2022_2t", campoAbsoluto: "votos_bolsonaro_2022_2t", tipo: "jenks", escala: "principais" },
+  { eleicao: "2022", turno: "2", id: "inv22b", rotulo: "Inválidos", campo: "pct_invalidos_2022_2t", campoAbsoluto: "votos_invalidos_2022_2t", tipo: "jenks", escala: "invalidos" },
+  { eleicao: "2022", turno: "2", id: "nc22b", rotulo: "Não comparecimento", campo: "pct_nc_2022_2t", campoAbsoluto: "votos_nc_2022_2t", tipo: "jenks", escala: "comparecimento" },
+  { eleicao: "2022", turno: "delta", id: "difLulaT22", rotulo: "Lula", campo: "var_lula_turno_2022", campoAbsoluto: "dif_lula_turno_2022", tipo: "div", escalaDif: "difTurno22Principais", sentido: "2º turno menos 1º turno" },
+  { eleicao: "2022", turno: "delta", id: "difBolsonaroT22", rotulo: "Bolsonaro", campo: "var_bolsonaro_turno_2022", campoAbsoluto: "dif_bolsonaro_turno_2022", tipo: "div", escalaDif: "difTurno22Principais", sentido: "2º turno menos 1º turno" },
+  { eleicao: "2022", turno: "delta", id: "difInvT22", rotulo: "Inválidos", campo: "var_invalidos_turno_2022", campoAbsoluto: "dif_invalidos_turno_2022", tipo: "div", escalaDif: "difTurno22Invalidos", sentido: "2º turno menos 1º turno" },
+  { eleicao: "2022", turno: "delta", id: "difNcT22", rotulo: "Não comparecimento", campo: "var_nc_turno_2022", campoAbsoluto: "dif_nc_turno_2022", tipo: "div", escalaDif: "difTurno22Comparecimento", sentido: "2º turno menos 1º turno" },
+  { eleicao: "2026 × 2022", turno: "1", id: "difLula", rotulo: "Lula", campo: "var_lula", campoAbsoluto: "dif_lula", tipo: "div", escalaDif: "difAno1Principais", sentido: "2026 menos 2022" },
+  { eleicao: "2026 × 2022", turno: "1", id: "difBolsonaro", rotulo: "Bolsonaro / Flávio", campo: "var_bolsonaro", campoAbsoluto: "dif_bolsonaro", tipo: "div", escalaDif: "difAno1Principais", sentido: "2026 menos 2022" },
+  { eleicao: "2026 × 2022", turno: "1", id: "difInv", rotulo: "Inválidos", campo: "var_invalidos", campoAbsoluto: "dif_invalidos", tipo: "div", escalaDif: "difAno1Invalidos", sentido: "2026 menos 2022" },
+  { eleicao: "2026 × 2022", turno: "1", id: "difNc", rotulo: "Não comparecimento", campo: "var_nc", campoAbsoluto: "dif_nc", tipo: "div", escalaDif: "difAno1Comparecimento", sentido: "2026 menos 2022" },
+  { eleicao: "2026 × 2022", turno: "2", id: "difLulaAno2", rotulo: "Lula", campo: "var_lula_anos_2t", campoAbsoluto: "dif_lula_anos_2t", tipo: "div", escalaDif: "difAno2Principais", sentido: "2026 menos 2022" },
+  { eleicao: "2026 × 2022", turno: "2", id: "difBolsonaroAno2", rotulo: "Bolsonaro / Flávio", campo: "var_bolsonaro_anos_2t", campoAbsoluto: "dif_bolsonaro_anos_2t", tipo: "div", escalaDif: "difAno2Principais", sentido: "2026 menos 2022" },
+  { eleicao: "2026 × 2022", turno: "2", id: "difInvAno2", rotulo: "Inválidos", campo: "var_invalidos_anos_2t", campoAbsoluto: "dif_invalidos_anos_2t", tipo: "div", escalaDif: "difAno2Invalidos", sentido: "2026 menos 2022" },
+  { eleicao: "2026 × 2022", turno: "2", id: "difNcAno2", rotulo: "Não comparecimento", campo: "var_nc_anos_2t", campoAbsoluto: "dif_nc_anos_2t", tipo: "div", escalaDif: "difAno2Comparecimento", sentido: "2026 menos 2022" },
+  { eleicao: "Rendimento", id: "renda", rotulo: "Nominal mediano", campo: "renda_mediana", tipo: "reais" },
+  { eleicao: "Vulnerabilidade", id: "ipvs", rotulo: "IPVS", campo: "ipvs", tipo: "estrato" },
 ];
 
 const ESTRATOS_IPVS = [
@@ -331,33 +359,34 @@ function prepararCamadas(features) {
   prepararComparacoes(features);
 }
 
-function limiteSimetrico(valores) {
+function limiteSimetrico(valores, minimo = 1) {
   const absolutos = valores.map((valor) => Math.abs(valor)).sort((a, b) => a - b);
-  if (!absolutos.length) return 1;
+  if (!absolutos.length) return minimo;
   const posicao = Math.min(absolutos.length - 1, Math.floor(0.9 * (absolutos.length - 1)));
-  const referencia = Math.max(1, absolutos[posicao]);
+  const referencia = Math.max(minimo, absolutos[posicao]);
   const magnitude = 10 ** Math.floor(Math.log10(referencia));
   return Math.ceil(referencia / magnitude) * magnitude;
 }
 
-function prepararComparacoes(features) {
-  CAMADAS.filter((camada) => camada.tipo === "div").forEach((camada) => {
-    camada.def = { tipo: "div", min: -0.1, max: 0.1, compartilhada: true };
-    camada.cores = ESPECTRAL.slice();
-  });
+function definirEscalaDiv(features, origem, destino, minimo) {
   const grupos = new Map();
-  CAMADAS.filter((camada) => camada.tipo === "div" && camada.campoAbsoluto).forEach((camada) => {
+  CAMADAS.filter((camada) => camada.tipo === "div" && camada[origem]).forEach((camada) => {
     const lista = grupos.get(camada.escalaDif) || [];
-    lista.push(...valoresDaCamada(features, camada.campoAbsoluto, camada.campo));
+    lista.push(...valoresDaCamada(features, camada[origem], camada[origem]));
     grupos.set(camada.escalaDif, lista);
   });
   grupos.forEach((valores, nome) => {
-    const limite = limiteSimetrico(valores);
+    const limite = limiteSimetrico(valores, minimo);
     CAMADAS.filter((camada) => camada.escalaDif === nome).forEach((camada) => {
-      camada.defAbsoluto = { tipo: "div", min: -limite, max: limite, compartilhada: true };
-      camada.coresAbsoluto = ESPECTRAL.slice();
+      camada[destino] = { tipo: "div", min: -limite, max: limite, compartilhada: true };
+      camada.cores = ESPECTRAL.slice();
     });
   });
+}
+
+function prepararComparacoes(features) {
+  definirEscalaDiv(features, "campo", "def", 0.01);
+  definirEscalaDiv(features, "campoAbsoluto", "defAbsoluto", 1);
 }
 
 function indice(valor, atual) {
@@ -487,8 +516,8 @@ function textoCamada(camada, propriedades) {
   }
   if (camada.tipo === "div") {
     const atual = vista(camada);
-    const texto = atual.absoluto ? formatarVotos(propriedades[atual.campo]) : formatarPercentual(propriedades[atual.campo]);
-    return `${camada.rotulo}: ${texto}`;
+    const formatar = atual.absoluto ? formatarVotos : formatarPercentual;
+    return `${camada.rotulo}: ${formatar(propriedades[atual.campo])}`;
   }
   if (camada.tipo === "estrato") return `${camada.rotulo}: ${rotuloIpvs(propriedades[camada.campo])}`;
   if (camada.tipo === "reais") return `${camada.rotulo}: ${formatarRenda(propriedades[camada.campo])}`;
@@ -500,7 +529,7 @@ function textoCamada(camada, propriedades) {
 function popup(feature) {
   const p = feature.properties;
   const linhas = CAMADAS
-    .filter((camada) => camada.grupo === camadaAtiva.grupo)
+    .filter((camada) => camada.eleicao === camadaAtiva.eleicao && camada.turno === camadaAtiva.turno)
     .map((camada) => {
       const texto = textoCamada(camada, p);
       return camada.id === camadaAtiva.id ? `<strong>${texto}</strong>` : texto;
@@ -509,7 +538,7 @@ function popup(feature) {
   const extras = [];
   if (camadaAtiva.tipo !== "reais") extras.push(`Renda mediana: ${formatarRenda(p.renda_mediana)}`);
   if (camadaAtiva.id !== "ipvs") extras.push(`IPVS: ${rotuloIpvs(p.ipvs)}`);
-  return `<strong>${camadaAtiva.grupo}</strong><br>${linhas}<br>${p.nm_mun || "sem município"}<br>${extras.join("<br>")}`;
+  return `<strong>${prefixoDaCamada(camadaAtiva)}</strong><br>${linhas}<br>${p.nm_mun || "sem município"}<br>${extras.join("<br>")}`;
 }
 
 function desenharLegenda() {
@@ -522,7 +551,7 @@ function desenharLegenda() {
   faixa.style.background = "";
   marcas.innerHTML = "";
   marcas.className = "marcas";
-  titulo.textContent = `${camadaAtiva.grupo}: ${camadaAtiva.rotulo}`;
+  titulo.textContent = tituloDaCamada(camadaAtiva);
   if (camadaAtiva.tipo === "estrato") {
     faixa.classList.add("lista");
     ESTRATOS_IPVS.forEach((estrato) => {
@@ -574,7 +603,7 @@ function desenharLegenda() {
     });
     const notaEscala = camadaAtiva.defCinco.fino
       ? "Escala de 1,5 em 1,5 pontos percentuais, entre o menor e o maior valor deste candidato. A cor mais escura é o topo dele."
-      : `Escala de 5 em 5 pontos percentuais.${camadaAtiva.escala === "principais" ? " Mesma escala de Lula e Bolsonaro, nos dois anos." : ""}`;
+      : `Escala de 5 em 5 pontos percentuais.${camadaAtiva.escala === "principais" ? " Mesma escala de Lula e Bolsonaro, nos dois anos e nos dois turnos." : ""}`;
     nota.textContent = notaEscala;
     return;
   }
@@ -597,7 +626,7 @@ function desenharLegenda() {
     const unidade = atual.absoluto ? " A escala está em votos." : "";
     const notaEscala = camadaAtiva.escala === "demais"
       ? "Dez classes por quebras naturais, entre o menor e o maior valor deste candidato. A cor mais escura é o topo dele."
-      : "Dez classes por quebras naturais, calculadas com 2022 e 2026 juntos. A mesma escala vale nos dois anos.";
+      : "Dez classes por quebras naturais, calculadas com 2022 e 2026 juntos, nos dois turnos. A mesma escala vale para todos.";
     nota.textContent = `${notaEscala}${unidade}`;
     return;
   }
@@ -622,7 +651,7 @@ function desenharLegenda() {
     nota.textContent = `${notaDaEscala(camadaAtiva)}.${unidade}`;
     return;
   }
-  if (camadaAtiva.def.tipo === "div") {
+  if (camadaAtiva.tipo === "div" && camadaAtiva.def) {
     const atual = vista(camadaAtiva);
     const escala = atual.def;
     const formatar = atual.absoluto ? formatarVotos : formatarPercentual;
@@ -632,18 +661,21 @@ function desenharLegenda() {
       faixa.appendChild(parte);
     });
     const zero = ((0 - escala.min) / (escala.max - escala.min)) * 100;
-    const marcaZero = atual.absoluto ? "0" : "0%";
-    marcas.innerHTML = `<span>${formatar(escala.min)}</span><span class="zero" style="left:${zero}%">${marcaZero}</span><span>${formatar(escala.max)}</span>`;
-    const mesma = camadaAtiva.escalaDif === "difPrincipais" ? " Mesma escala de Lula e de Bolsonaro/Flávio." : "";
+    marcas.innerHTML = `<span>${formatar(escala.min)}</span><span class="zero" style="left:${zero}%">0</span><span>${formatar(escala.max)}</span>`;
+    const mesma = camadaAtiva.escalaDif && camadaAtiva.escalaDif.endsWith("Principais")
+      ? " Mesma escala de Lula e do adversário."
+      : "";
+    const sentido = camadaAtiva.sentido || "2026 menos 2022";
+    const partida = sentido.startsWith("2º") ? "pelos votos do 1º turno" : "pelos votos de 2022";
     nota.textContent = atual.absoluto
-      ? `Diferença de votos, 2026 menos 2022.${mesma} A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento.`
-      : "Diferença dos percentuais, 2026 menos 2022. Escala contínua de −10% a +10%. A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento.";
+      ? `Diferença de votos, ${sentido}.${mesma} A cor mais forte vale a partir desse limite. Azul é redução e vermelho é crescimento.`
+      : `Variação dos votos, ${sentido}. A taxa divide a diferença de votos ${partida}.${mesma} Azul é redução e vermelho é crescimento.`;
   }
 }
 
 function notaDaEscala(camada) {
   if (camada.escala === "principais" || camada.escalaDif === "difPrincipais") {
-    return "Mesma escala de Lula e Bolsonaro, nos dois anos";
+    return "Mesma escala de Lula e Bolsonaro, nos dois anos e nos dois turnos";
   }
   if (camada.escala === "invalidos" || camada.escalaDif === "difInvalidos") {
     return "Mesma escala de inválidos em 2022 e em 2026";
@@ -654,8 +686,18 @@ function notaDaEscala(camada) {
   return "Quebras naturais desta camada";
 }
 
+function prefixoDaCamada(camada) {
+  const turno = TURNOS.find((item) => item.id === camada.turno);
+  return turno ? `${camada.eleicao} · ${turno.rotulo}` : camada.eleicao;
+}
+
+function tituloDaCamada(camada) {
+  return `${prefixoDaCamada(camada)}: ${camada.rotulo}`;
+}
+
 function aplicarCamada(id) {
   camadaAtiva = CAMADAS.find((item) => item.id === id) || CAMADAS[0];
+  atualizarInterruptor();
   if (grade) {
     grade.setStyle((feature) => estilo(feature));
     grade.eachLayer((layer) => {
@@ -665,13 +707,20 @@ function aplicarCamada(id) {
   desenharLegenda();
 }
 
-function camadasDoGrupo(nome) {
-  return CAMADAS.filter((item) => item.grupo === nome);
+function turnosDaEleicao(eleicao) {
+  const ids = new Set(
+    CAMADAS.filter((item) => item.eleicao === eleicao && item.turno).map((item) => item.turno),
+  );
+  return TURNOS.filter((turno) => ids.has(turno.id));
 }
 
-function preencherCamadas(grupo, rotuloPreferido) {
+function camadasDaCombinacao(eleicao, turno) {
+  return CAMADAS.filter((item) => item.eleicao === eleicao && (item.turno || null) === (turno || null));
+}
+
+function preencherCamadas(eleicao, turno, rotuloPreferido) {
   const select = document.getElementById("camada");
-  const lista = camadasDoGrupo(grupo);
+  const lista = camadasDaCombinacao(eleicao, turno);
   select.replaceChildren();
   lista.forEach((item) => {
     const opcao = document.createElement("option");
@@ -684,21 +733,51 @@ function preencherCamadas(grupo, rotuloPreferido) {
   aplicarCamada(select.value);
 }
 
+function preencherTurnos(eleicao, turnoPreferido) {
+  const select = document.getElementById("turno");
+  const menu = document.getElementById("menu-turno");
+  const lista = turnosDaEleicao(eleicao);
+  menu.hidden = lista.length === 0;
+  select.replaceChildren();
+  lista.forEach((turno) => {
+    const opcao = document.createElement("option");
+    opcao.value = turno.id;
+    opcao.textContent = turno.rotulo;
+    select.appendChild(opcao);
+  });
+  if (lista.some((turno) => turno.id === turnoPreferido)) select.value = turnoPreferido;
+  return lista.length ? select.value : null;
+}
+
 function montarPainel() {
-  const grupo = document.getElementById("grupo");
+  const eleicao = document.getElementById("eleicao");
+  const turno = document.getElementById("turno");
   const camada = document.getElementById("camada");
-  [...new Set(CAMADAS.map((item) => item.grupo))].forEach((nome) => {
+  [...new Set(CAMADAS.map((item) => item.eleicao))].forEach((nome) => {
     const opcao = document.createElement("option");
     opcao.value = nome;
     opcao.textContent = nome;
-    grupo.appendChild(opcao);
+    eleicao.appendChild(opcao);
   });
-  grupo.addEventListener("change", () => {
+  eleicao.addEventListener("change", () => {
     const atual = CAMADAS.find((item) => item.id === camada.value);
-    preencherCamadas(grupo.value, atual ? atual.rotulo : "");
+    const turnoEscolhido = preencherTurnos(eleicao.value, turno.value);
+    preencherCamadas(eleicao.value, turnoEscolhido, atual ? atual.rotulo : "");
+  });
+  turno.addEventListener("change", () => {
+    const atual = CAMADAS.find((item) => item.id === camada.value);
+    preencherCamadas(eleicao.value, turno.value, atual ? atual.rotulo : "");
   });
   camada.addEventListener("change", () => aplicarCamada(camada.value));
-  preencherCamadas(grupo.value, "");
+  const turnoInicial = preencherTurnos(eleicao.value, "1");
+  preencherCamadas(eleicao.value, turnoInicial, "");
+}
+
+function atualizarInterruptor() {
+  const controle = document.getElementById("modo-valor");
+  const serve = Boolean(camadaAtiva.campoAbsoluto);
+  controle.disabled = !serve;
+  controle.closest("label").classList.toggle("inativo", !serve);
 }
 
 function montarInterruptor() {
@@ -712,9 +791,35 @@ function montarInterruptor() {
 montarPainel();
 montarInterruptor();
 
-fetch("dados/grade.geojson?v=21")
+fetch("dados/grade.geojson?v=24")
   .then((resposta) => resposta.json())
   .then((dados) => {
+    const taxas = [
+      ["var_lula_turno_2026", "dif_lula_turno_2026", "votos_lula_2026"],
+      ["var_flavio_turno_2026", "dif_flavio_turno_2026", "votos_flavio_2026"],
+      ["var_invalidos_turno_2026", "dif_invalidos_turno_2026", "votos_invalidos_2026"],
+      ["var_nc_turno_2026", "dif_nc_turno_2026", "votos_nc_2026"],
+      ["var_lula_turno_2022", "dif_lula_turno_2022", "votos_lula_2022"],
+      ["var_bolsonaro_turno_2022", "dif_bolsonaro_turno_2022", "votos_bolsonaro_2022"],
+      ["var_invalidos_turno_2022", "dif_invalidos_turno_2022", "votos_invalidos_2022"],
+      ["var_nc_turno_2022", "dif_nc_turno_2022", "votos_nc_2022"],
+      ["var_lula", "dif_lula", "votos_lula_2022"],
+      ["var_bolsonaro", "dif_bolsonaro", "votos_bolsonaro_2022"],
+      ["var_invalidos", "dif_invalidos", "votos_invalidos_2022"],
+      ["var_nc", "dif_nc", "votos_nc_2022"],
+      ["var_lula_anos_2t", "dif_lula_anos_2t", "votos_lula_2022_2t"],
+      ["var_bolsonaro_anos_2t", "dif_bolsonaro_anos_2t", "votos_bolsonaro_2022_2t"],
+      ["var_invalidos_anos_2t", "dif_invalidos_anos_2t", "votos_invalidos_2022_2t"],
+      ["var_nc_anos_2t", "dif_nc_anos_2t", "votos_nc_2022_2t"],
+    ];
+    dados.features.forEach((feature) => {
+      const p = feature.properties;
+      taxas.forEach(([destino, diferenca, base]) => {
+        p[destino] = numeroValido(p[diferenca]) && numeroValido(p[base]) && Number(p[base]) > 0
+          ? Number(p[diferenca]) / Number(p[base])
+          : null;
+      });
+    });
     prepararCamadas(dados.features);
     dados.features.forEach((feature) => {
       const p = feature.properties;
@@ -727,6 +832,16 @@ fetch("dados/grade.geojson?v=21")
       const bolsonaro = Number(p.pct_bolsonaro_2022);
       p.parte_lula_2022 = numeroValido(lula22) && numeroValido(bolsonaro) && lula22 + bolsonaro > 0
         ? lula22 / (lula22 + bolsonaro)
+        : null;
+      const lula26b = Number(p.pct_lula_2026_2t);
+      const flavio2 = Number(p.pct_flavio_2026_2t);
+      p.parte_lula_2026_2t = numeroValido(lula26b) && numeroValido(flavio2) && lula26b + flavio2 > 0
+        ? lula26b / (lula26b + flavio2)
+        : null;
+      const lula22b = Number(p.pct_lula_2022_2t);
+      const bolsonaro2 = Number(p.pct_bolsonaro_2022_2t);
+      p.parte_lula_2022_2t = numeroValido(lula22b) && numeroValido(bolsonaro2) && lula22b + bolsonaro2 > 0
+        ? lula22b / (lula22b + bolsonaro2)
         : null;
     });
     grade = L.geoJSON(dados, {

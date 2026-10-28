@@ -1,635 +1,425 @@
-let faixas = [];
-let classificar = () => null;
-let tituloEixo = "Renda mediana do responsável (R$)";
+const CLASSES = ["Baixíssima", "Muito baixa", "Baixa", "Média", "Alta", "Muito alta"];
+const COMPARACOES = [
+  { id: "turno-2026", rotulo: "2026, 2º − 1º", cor: "#d73027", corQueda: "#f4a6a0", inicial: true },
+  { id: "turno-2022", rotulo: "2022, 2º − 1º", cor: "#4575b4", corQueda: "#a6cee3", inicial: true },
+  { id: "ano-1", rotulo: "1º turno, 2026 − 2022", cor: "#b8860b", corQueda: "#f3e0a4", inicial: false },
+  { id: "ano-2", rotulo: "2º turno, 2026 − 2022", cor: "#762a83", corQueda: "#d7b3dc", inicial: false },
+];
+const ANOS = [
+  { id: "2026", rotulo: "2026, 2º − 1º", indice: 0, forma: "circle" },
+  { id: "2022", rotulo: "2022, 2º − 1º", indice: 1, forma: "triangle" },
+];
 
-const COR_PERDA = "#cc2812";
-const COR_GANHO = "#1a9850";
-const COR_2022 = "#3288bd";
-const COR_2026 = "#9a3412";
+const SEGMENTOS = [
+  {
+    id: "lula",
+    rotulo: "Lula",
+    cor: "#b2182b",
+    pares: [
+      ["dif_lula_turno_2026", "votos_lula_2026"],
+      ["dif_lula_turno_2022", "votos_lula_2022"],
+      ["dif_lula", "votos_lula_2022"],
+      ["dif_lula_anos_2t", "votos_lula_2022_2t"],
+    ],
+  },
+  {
+    id: "adversario",
+    rotulo: "Flávio/Bolsonaro",
+    cor: "#b8860b",
+    pares: [
+      ["dif_flavio_turno_2026", "votos_flavio_2026"],
+      ["dif_bolsonaro_turno_2022", "votos_bolsonaro_2022"],
+      ["dif_bolsonaro", "votos_bolsonaro_2022"],
+      ["dif_bolsonaro_anos_2t", "votos_bolsonaro_2022_2t"],
+    ],
+  },
+  {
+    id: "invalidos",
+    rotulo: "Inválidos",
+    cor: "#525252",
+    pares: [
+      ["dif_invalidos_turno_2026", "votos_invalidos_2026"],
+      ["dif_invalidos_turno_2022", "votos_invalidos_2022"],
+      ["dif_invalidos", "votos_invalidos_2022"],
+      ["dif_invalidos_anos_2t", "votos_invalidos_2022_2t"],
+    ],
+  },
+  {
+    id: "nc",
+    rotulo: "Não comparecimento",
+    cor: "#1b7837",
+    pares: [
+      ["dif_nc_turno_2026", "votos_nc_2026"],
+      ["dif_nc_turno_2022", "votos_nc_2022"],
+      ["dif_nc", "votos_nc_2022"],
+      ["dif_nc_anos_2t", "votos_nc_2022_2t"],
+    ],
+  },
+];
 
-function quebrasNaturais(valores, classes) {
-  const dados = valores.slice().sort((a, b) => a - b);
-  const distintos = new Set(dados).size;
-  const k = Math.max(1, Math.min(classes, distintos));
-  if (dados.length === 0) return [0, 1];
-  if (k === 1) return [dados[0], dados[dados.length - 1]];
+let agregados = [];
+let celulas = [];
 
-  const n = dados.length;
-  const limite = Array.from({ length: n + 1 }, () => Array(k + 1).fill(0));
-  const variancia = Array.from({ length: n + 1 }, () => Array(k + 1).fill(0));
-  for (let i = 1; i <= k; i += 1) {
-    limite[1][i] = 1;
-    variancia[1][i] = 0;
-    for (let j = 2; j <= n; j += 1) variancia[j][i] = Infinity;
-  }
-  for (let l = 2; l <= n; l += 1) {
-    let soma = 0;
-    let somaQuadrados = 0;
-    let peso = 0;
-    for (let m = 1; m <= l; m += 1) {
-      const inicio = l - m + 1;
-      const valor = dados[inicio - 1];
-      peso += 1;
-      soma += valor;
-      somaQuadrados += valor * valor;
-      const dispersao = somaQuadrados - (soma * soma) / peso;
-      const anterior = inicio - 1;
-      if (anterior !== 0) {
-        for (let j = 2; j <= k; j += 1) {
-          const candidata = dispersao + variancia[anterior][j - 1];
-          if (variancia[l][j] >= candidata) {
-            limite[l][j] = inicio;
-            variancia[l][j] = candidata;
-          }
-        }
-      }
+function numeroValido(valor) {
+  return valor !== null && valor !== undefined && Number.isFinite(Number(valor));
+}
+
+function classeDe(propriedades) {
+  const valor = Number(propriedades.ipvs);
+  if (valor >= 1 && valor <= 6) return valor - 1;
+  return null;
+}
+
+function marcado(id) {
+  const campo = document.getElementById(id);
+  return Boolean(campo && campo.checked);
+}
+
+function agregar(features, campoDif, campoBase) {
+  const absoluto = Array(CLASSES.length).fill(0);
+  const diferencaTaxa = Array(CLASSES.length).fill(0);
+  const baseTaxa = Array(CLASSES.length).fill(0);
+  features.forEach((feature) => {
+    const propriedades = feature.properties;
+    const indice = classeDe(propriedades);
+    if (indice === null || !numeroValido(propriedades[campoDif])) return;
+    const diferenca = Number(propriedades[campoDif]);
+    absoluto[indice] += diferenca;
+    if (numeroValido(propriedades[campoBase]) && Number(propriedades[campoBase]) > 0) {
+      diferencaTaxa[indice] += diferenca;
+      baseTaxa[indice] += Number(propriedades[campoBase]);
     }
-    limite[l][1] = 1;
-    variancia[l][1] = somaQuadrados - (soma * soma) / peso;
-  }
+  });
+  return {
+    absoluto: absoluto.map((valor) => Math.round(valor)),
+    taxa: diferencaTaxa.map((valor, indice) => (baseTaxa[indice] > 0 ? valor / baseTaxa[indice] : null)),
+  };
+}
 
-  const quebras = Array(k + 1).fill(0);
-  quebras[k] = dados[n - 1];
-  quebras[0] = dados[0];
-  let indiceFinal = n - 1;
-  for (let classe = k; classe > 1; classe -= 1) {
-    const inicio = limite[indiceFinal][classe];
-    quebras[classe - 1] = dados[inicio - 2];
-    indiceFinal = inicio - 1;
-  }
-  return quebras;
+function limiteDe(listas) {
+  const valores = listas.flat(Infinity).filter(numeroValido).map((valor) => Math.abs(Number(valor)));
+  return valores.length ? Math.max(...valores) * 1.05 : 1;
+}
+
+function formatarVotos(valor) {
+  return Number(valor).toLocaleString("pt-BR");
+}
+
+function formatarTaxa(valor) {
+  return `${(Number(valor) * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 }
 
 function formatarReais(valor) {
   return Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 
-function montarFaixas(features) {
-  const valores = features
-    .map((feature) => feature.properties.renda_mediana)
-    .filter(numeroValido)
-    .map(Number);
-  const quebras = quebrasNaturais(valores, 5);
-  faixas = quebras.slice(0, -1).map((inicio, indice) => ({
-    rotulo: `${formatarReais(inicio)} a ${formatarReais(quebras[indice + 1])}`,
-    maximo: quebras[indice + 1],
-  }));
+function comAlfa(hex, alfa) {
+  const numero = parseInt(hex.slice(1), 16);
+  const canal = (deslocamento) => (numero >> deslocamento) & 255;
+  return `rgba(${canal(16)}, ${canal(8)}, ${canal(0)}, ${alfa})`;
 }
 
-function indiceFaixa(renda) {
-  const indice = faixas.findIndex((faixa) => renda <= faixa.maximo);
-  return indice === -1 ? faixas.length - 1 : indice;
+function corDaBarra(valor, comparacao) {
+  if (!numeroValido(valor) || Number(valor) === 0) return "#d4d4d8";
+  return Number(valor) < 0 ? comparacao.corQueda : comparacao.cor;
 }
 
-function numeroValido(valor) {
-  return valor !== null && valor !== undefined && Number.isFinite(Number(valor));
+function comparacoesMarcadas() {
+  return COMPARACOES.filter((item) => marcado(`comparacao-${item.id}`));
 }
 
-function contar(features, campo) {
-  const perdeu = faixas.map(() => 0);
-  const ganhou = faixas.map(() => 0);
-  features.forEach((feature) => {
-    const p = feature.properties;
-    const indice = classificar(p);
-    if (indice === null || !numeroValido(p[campo])) return;
-    const valor = Number(p[campo]);
-    if (valor < 0) perdeu[indice] += 1;
-    else if (valor > 0) ganhou[indice] += 1;
+function opcao(id, rotulo, cor, ligado) {
+  const rotuloCampo = document.createElement("label");
+  const campo = document.createElement("input");
+  campo.type = "checkbox";
+  campo.id = id;
+  campo.checked = ligado;
+  const amostra = document.createElement("i");
+  amostra.className = "amostra";
+  amostra.style.background = cor;
+  rotuloCampo.append(campo, amostra, document.createTextNode(rotulo));
+  return rotuloCampo;
+}
+
+function opcaoForma(id, rotulo, forma, ligado) {
+  const rotuloCampo = document.createElement("label");
+  const campo = document.createElement("input");
+  campo.type = "checkbox";
+  campo.id = id;
+  campo.checked = ligado;
+  const marca = document.createElement("i");
+  marca.className = forma === "triangle" ? "marca marca-triangulo" : "marca marca-circulo";
+  rotuloCampo.append(campo, marca, document.createTextNode(rotulo));
+  return rotuloCampo;
+}
+
+function montarSeletores() {
+  const comparacoes = document.getElementById("seletor-comparacoes");
+  COMPARACOES.forEach((item) => {
+    comparacoes.appendChild(opcao(`comparacao-${item.id}`, item.rotulo, item.cor, item.inicial));
   });
-  return { perdeu, ganhou };
-}
-
-function somarDiferenca(features, campo) {
-  const perdeu = faixas.map(() => 0);
-  const ganhou = faixas.map(() => 0);
-  features.forEach((feature) => {
-    const p = feature.properties;
-    const indice = classificar(p);
-    if (indice === null || !numeroValido(p[campo])) return;
-    const valor = Number(p[campo]);
-    if (valor < 0) perdeu[indice] += -valor;
-    else if (valor > 0) ganhou[indice] += valor;
+  const segmentos = document.getElementById("seletor-segmentos");
+  SEGMENTOS.forEach((item) => {
+    segmentos.appendChild(opcao(`segmento-${item.id}`, item.rotulo, item.cor, item.id === "lula"));
   });
-  return {
-    perdeu: perdeu.map((valor) => Math.round(valor)),
-    ganhou: ganhou.map((valor) => Math.round(valor)),
-  };
-}
-
-function somarVotos(features, campo, campoBase) {
-  const votos = faixas.map(() => 0);
-  features.forEach((feature) => {
-    const p = feature.properties;
-    const indice = classificar(p);
-    if (indice === null || !numeroValido(p[campoBase]) || !numeroValido(p[campo])) return;
-    votos[indice] += Number(p[campo]);
+  const anos = document.getElementById("seletor-anos");
+  ANOS.forEach((item) => {
+    anos.appendChild(opcaoForma(`ano-${item.id}`, item.rotulo, item.forma, true));
   });
-  return votos.map((valor) => Math.round(valor));
+  document.querySelectorAll(".seletor input").forEach((campo) => {
+    campo.addEventListener("change", atualizar);
+  });
 }
 
-function maximoDe(series) {
-  return Math.max(...series.flat());
-}
-
-function desenhar(canvas, series, maximo, tituloY, unidade) {
+function desenharBarras(canvas, series, limite, taxa) {
+  const existente = Chart.getChart(canvas);
+  if (existente) existente.destroy();
   new Chart(canvas, {
     type: "bar",
     data: {
-      labels: faixas.map((faixa) => faixa.rotulo),
+      labels: CLASSES,
       datasets: series.map((serie) => ({
-        label: serie.rotulo,
+        label: serie.comparacao.rotulo,
         data: serie.dados,
-        backgroundColor: serie.cor,
+        cor: serie.comparacao.cor,
+        backgroundColor: serie.dados.map((valor) => corDaBarra(valor, serie.comparacao)),
+        borderWidth: 0,
       })),
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       color: "#1c1917",
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label(contexto) {
-              const quantidade = Number(contexto.raw).toLocaleString("pt-BR");
-              return `${contexto.dataset.label}: ${quantidade} ${unidade}`;
-            },
-          },
-        },
-      },
-      scales: {
-        x: { title: { display: true, text: tituloEixo } },
-        y: {
-          beginAtZero: true,
-          max: maximo,
-          title: { display: true, text: tituloY },
-          ticks: {
-            precision: 0,
-            callback(valor) {
-              return Number(valor).toLocaleString("pt-BR");
-            },
-          },
-        },
-      },
-    },
-  });
-}
-
-const COR_TOTAL = "#1c1917";
-const COR_LULA = "#cc2812";
-const COR_ADVERSARIO = "#967311";
-const COR_INVALIDOS = "#6a51a3";
-const COR_NC = "#3288bd";
-
-function seriesVariacao(contagem) {
-  return [
-    { rotulo: "Perdeu", dados: contagem.perdeu, cor: COR_PERDA },
-    { rotulo: "Ganhou", dados: contagem.ganhou, cor: COR_GANHO },
-  ];
-}
-
-function saldoPorFaixa(features, campoDif, campoBase) {
-  const saldo = faixas.map(() => 0);
-  const base = faixas.map(() => 0);
-  features.forEach((feature) => {
-    const p = feature.properties;
-    const indice = classificar(p);
-    if (indice === null || !numeroValido(p[campoDif]) || !numeroValido(p[campoBase])) return;
-    saldo[indice] += Number(p[campoDif]);
-    base[indice] += Number(p[campoBase]);
-  });
-  return {
-    absoluto: saldo.map((valor) => Math.round(valor)),
-    percentual: saldo.map((valor, indice) => (
-      base[indice] > 0 ? Math.round((valor / base[indice]) * 1000) / 10 : null
-    )),
-  };
-}
-
-function limitesEixo(series) {
-  const numeros = series.flat().filter((valor) => numeroValido(valor)).map(Number);
-  const minimo = Math.min(0, ...numeros);
-  const maximo = Math.max(0, ...numeros);
-  return { min: minimo, max: maximo === minimo ? minimo + 1 : maximo };
-}
-
-function desenharSaldo(canvas, saldo, eixoVotos, eixoPercentual) {
-  new Chart(canvas, {
-    data: {
-      labels: faixas.map((faixa) => faixa.rotulo),
-      datasets: [
-        {
-          type: "bar",
-          label: "Saldo em votos",
-          data: saldo.absoluto,
-          backgroundColor: saldo.absoluto.map((valor) => (valor < 0 ? COR_PERDA : COR_GANHO)),
-          yAxisID: "y",
-        },
-        {
-          type: "line",
-          label: "Saldo percentual",
-          data: saldo.percentual,
-          borderColor: COR_TOTAL,
-          backgroundColor: COR_TOTAL,
-          pointRadius: 3,
-          tension: 0,
-          yAxisID: "y1",
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      color: "#1c1917",
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label(contexto) {
-              const valor = Number(contexto.raw);
-              if (contexto.dataset.yAxisID === "y1") {
-                return `${contexto.dataset.label}: ${valor.toLocaleString("pt-BR")}%`;
-              }
-              return `${contexto.dataset.label}: ${valor.toLocaleString("pt-BR")} votos`;
-            },
-          },
-        },
-      },
-      scales: {
-        x: { title: { display: true, text: tituloEixo } },
-        y: {
-          position: "left",
-          min: eixoVotos.min,
-          max: eixoVotos.max,
-          title: { display: true, text: "Saldo de votos (2026 − 2022)" },
-          ticks: {
-            callback(valor) {
-              return Number(valor).toLocaleString("pt-BR");
-            },
-          },
-        },
-        y1: {
-          position: "right",
-          min: eixoPercentual.min,
-          max: eixoPercentual.max,
-          grid: { drawOnChartArea: false },
-          title: { display: true, text: "Saldo em relação a 2022 (%)" },
-          ticks: {
-            callback(valor) {
-              return `${Number(valor).toLocaleString("pt-BR")}%`;
-            },
-          },
-        },
-      },
-    },
-  });
-}
-
-function parcela(votos) {
-  const soma = votos.reduce((acumulado, valor) => acumulado + valor, 0);
-  if (soma <= 0) return votos.map(() => 0);
-  return votos.map((valor) => Math.round((valor / soma) * 1000) / 10);
-}
-
-function desenharLinha(canvas, series, maximo) {
-  new Chart(canvas, {
-    type: "line",
-    data: {
-      labels: faixas.map((faixa) => faixa.rotulo),
-      datasets: series.map((serie) => ({
-        label: serie.rotulo,
-        data: serie.dados,
-        borderColor: serie.cor,
-        backgroundColor: serie.cor,
-        borderWidth: serie.referencia ? 3 : 2,
-        pointRadius: 3,
-        tension: 0,
-      })),
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      color: "#1c1917",
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label(contexto) {
-              const quantidade = Number(contexto.raw).toLocaleString("pt-BR");
-              return `${contexto.dataset.label}: ${quantidade}%`;
-            },
-          },
-        },
-      },
-      scales: {
-        x: { title: { display: true, text: tituloEixo } },
-        y: {
-          beginAtZero: true,
-          max: maximo,
-          title: { display: true, text: "Parcela do próprio grupo (%)" },
-          ticks: {
-            callback(valor) {
-              return `${Number(valor).toLocaleString("pt-BR")}%`;
-            },
-          },
-        },
-      },
-    },
-  });
-}
-
-const COR_DEMAIS = "#78716c";
-
-function percentuaisDaClasse(votos) {
-  const nomes = Object.keys(votos);
-  const soma = nomes.reduce((acumulado, nome) => acumulado + votos[nome], 0);
-  if (soma <= 0) return nomes.map(() => 0);
-  const percentuais = nomes.map((nome) => Math.round((votos[nome] / soma) * 1000) / 10);
-  const ajuste = Math.round((100 - percentuais.reduce((acumulado, valor) => acumulado + valor, 0)) * 10) / 10;
-  if (ajuste !== 0) {
-    let maior = 0;
-    percentuais.forEach((valor, indice) => {
-      if (valor > percentuais[maior]) maior = indice;
-    });
-    percentuais[maior] = Math.round((percentuais[maior] + ajuste) * 10) / 10;
-  }
-  return percentuais;
-}
-
-function composicaoPorClasse(features, campos) {
-  const acumulado = faixas.map(() => ({ lula: 0, adversario: 0, demais: 0, invalidos: 0, nc: 0 }));
-  features.forEach((feature) => {
-    const p = feature.properties;
-    const indice = classificar(p);
-    if (indice === null || campos.some((campo) => !numeroValido(p[campo]))) return;
-    const lula = Number(p[campos[0]]);
-    const adversario = Number(p[campos[1]]);
-    const invalidos = Number(p[campos[2]]);
-    const totais = Number(p[campos[3]]);
-    const nc = Number(p[campos[4]]);
-    const item = acumulado[indice];
-    item.lula += lula;
-    item.adversario += adversario;
-    item.invalidos += invalidos;
-    item.demais += Math.max(0, totais - lula - adversario - invalidos);
-    item.nc += nc;
-  });
-  return acumulado.map((item) => ({
-    votos: {
-      lula: Math.round(item.lula),
-      adversario: Math.round(item.adversario),
-      demais: Math.round(item.demais),
-      invalidos: Math.round(item.invalidos),
-      nc: Math.round(item.nc),
-    },
-    percentuais: percentuaisDaClasse(item),
-  }));
-}
-
-function desenharEmpilhado(canvas, grupos, modo) {
-  const absoluto = modo === "absoluto";
-  const categorias = [
-    { chave: "lula", rotulo: "Lula", cor: COR_LULA },
-    { chave: "adversario", rotulo: "Bolsonaro / Flávio", cor: COR_ADVERSARIO },
-    { chave: "demais", rotulo: "Demais candidatos", cor: COR_DEMAIS },
-    { chave: "invalidos", rotulo: "Inválidos", cor: COR_INVALIDOS },
-    { chave: "nc", rotulo: "Não comparecimento", cor: COR_NC },
-  ];
-  const datasets = grupos.flatMap((grupo) => categorias.map((categoria, indice) => ({
-    label: categoria.rotulo,
-    data: grupo.classes.map((classe) => (absoluto ? classe.votos[categoria.chave] : classe.percentuais[indice])),
-    votos: grupo.classes.map((classe) => classe.votos[categoria.chave]),
-    percentuais: grupo.classes.map((classe) => classe.percentuais[indice]),
-    backgroundColor: categoria.cor,
-    stack: grupo.ano,
-  })));
-
-  new Chart(canvas, {
-    type: "bar",
-    plugins: [{
-      id: "rotulosEmpilhados",
-      afterDatasetsDraw(grafico) {
-        const { ctx } = grafico;
-        ctx.save();
-        ctx.font = "12px Segoe UI, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = "#fff";
-        ctx.fillStyle = "#1c1917";
-        grafico.data.datasets.forEach((dataset, indice) => {
-          const meta = grafico.getDatasetMeta(indice);
-          meta.data.forEach((barra, posicao) => {
-            const valor = dataset.data[posicao];
-            const { x, y, base } = barra.getProps(["x", "y", "base"], true);
-            if (Math.abs(base - y) < 16) return;
-            const texto = absoluto
-              ? Number(valor).toLocaleString("pt-BR")
-              : `${Number(valor).toLocaleString("pt-BR")}%`;
-            if (ctx.measureText(texto).width > barra.width - 6) return;
-            const meio = (y + base) / 2;
-            ctx.strokeText(texto, x, meio);
-            ctx.fillText(texto, x, meio);
-          });
-        });
-        ctx.font = "11px Segoe UI, sans-serif";
-        ctx.textBaseline = "top";
-        grupos.forEach((grupo, indiceGrupo) => {
-          const meta = grafico.getDatasetMeta(indiceGrupo * categorias.length);
-          meta.data.forEach((barra) => {
-            const { x } = barra.getProps(["x"], true);
-            ctx.strokeText(grupo.ano, x, grafico.chartArea.bottom + 4);
-            ctx.fillText(grupo.ano, x, grafico.chartArea.bottom + 4);
-          });
-        });
-        ctx.restore();
-      },
-    }],
-    data: {
-      labels: faixas.map((faixa) => faixa.rotulo),
-      datasets,
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      color: "#1c1917",
-      layout: { padding: { bottom: 4 } },
       plugins: {
         legend: {
+          position: "bottom",
+          onClick() {},
           labels: {
-            filter(item) {
-              return datasets[item.datasetIndex].stack === grupos[0].ano;
+            boxWidth: 12,
+            generateLabels(grafico) {
+              return grafico.data.datasets.map((dataset, indice) => ({
+                text: dataset.label,
+                fillStyle: dataset.cor,
+                strokeStyle: dataset.cor,
+                lineWidth: 0,
+                datasetIndex: indice,
+                hidden: !grafico.isDatasetVisible(indice),
+              }));
             },
           },
         },
         tooltip: {
           callbacks: {
             label(contexto) {
-              const percentual = Number(contexto.dataset.percentuais[contexto.dataIndex]).toLocaleString("pt-BR");
-              const quantidade = Number(contexto.dataset.votos[contexto.dataIndex]).toLocaleString("pt-BR");
-              const unidade = contexto.dataset.label === "Não comparecimento" ? "eleitores" : "votos";
-              const prefixo = `${contexto.dataset.stack} · ${contexto.dataset.label}`;
-              if (absoluto) return `${prefixo}: ${quantidade} ${unidade} (${percentual}%)`;
-              return `${prefixo}: ${percentual}% (${quantidade} ${unidade})`;
+              const valor = contexto.parsed.y;
+              const texto = taxa ? formatarTaxa(valor) : formatarVotos(valor);
+              return `${contexto.dataset.label}: ${texto}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: { title: { display: true, text: "Classe de vulnerabilidade (IPVS)" } },
+        y: {
+          min: -limite,
+          max: limite,
+          title: { display: true, text: taxa ? "Taxa sobre os votos de partida" : "Diferença de votos" },
+          ticks: {
+            callback(valor) {
+              return taxa ? formatarTaxa(valor) : formatarVotos(valor);
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+function pontosDoTurno(segmento, indiceAno) {
+  const [campoDif, campoBase] = segmento.pares[indiceAno];
+  const pontos = [];
+  celulas.forEach((feature) => {
+    const propriedades = feature.properties;
+    const renda = propriedades.renda_media_das_medias;
+    const base = propriedades[campoBase];
+    const diferenca = propriedades[campoDif];
+    if (!numeroValido(renda) || !numeroValido(diferenca) || !numeroValido(base) || Number(base) <= 0) return;
+    const mediana = propriedades.renda_mediana_das_medias;
+    pontos.push({
+      x: Number(renda),
+      y: Number(diferenca) / Number(base),
+      mediana: numeroValido(mediana) ? Number(mediana) : null,
+    });
+  });
+  return pontos;
+}
+
+function reta(pontos) {
+  if (pontos.length < 2) return null;
+  let somaX = 0;
+  let somaY = 0;
+  let somaXX = 0;
+  let somaXY = 0;
+  pontos.forEach((ponto) => {
+    somaX += ponto.x;
+    somaY += ponto.y;
+    somaXX += ponto.x * ponto.x;
+    somaXY += ponto.x * ponto.y;
+  });
+  const denominador = pontos.length * somaXX - somaX * somaX;
+  if (denominador === 0) return null;
+  const inclinacao = (pontos.length * somaXY - somaX * somaY) / denominador;
+  const intercepto = (somaY - inclinacao * somaX) / pontos.length;
+  const ordenados = pontos.map((ponto) => ponto.x).sort((a, b) => a - b);
+  const inicio = ordenados[0];
+  const fim = ordenados[ordenados.length - 1];
+  return [
+    { x: inicio, y: inclinacao * inicio + intercepto },
+    { x: fim, y: inclinacao * fim + intercepto },
+  ];
+}
+
+function desenharDispersao() {
+  const canvas = document.getElementById("correlacao");
+  const existente = Chart.getChart(canvas);
+  if (existente) existente.destroy();
+  const series = [];
+  const linhas = [];
+  SEGMENTOS.forEach((segmento) => {
+    if (!marcado(`segmento-${segmento.id}`)) return;
+    ANOS.forEach((ano) => {
+      if (!marcado(`ano-${ano.id}`)) return;
+      const pontos = pontosDoTurno(segmento, ano.indice);
+      series.push({
+        label: `${segmento.rotulo}, ${ano.rotulo}`,
+        data: pontos,
+        backgroundColor: comAlfa(segmento.cor, 0.45),
+        borderColor: segmento.cor,
+        borderWidth: 1.5,
+        hoverBorderWidth: 1.5,
+        pointStyle: ano.forma,
+        pointRadius: ano.forma === "circle" ? 3.6 : 5,
+        pointHoverRadius: ano.forma === "circle" ? 5 : 7,
+      });
+      const linha = reta(pontos);
+      if (linha) {
+        linhas.push({
+          pontos: linha,
+          cor: segmento.cor,
+          traco: ano.id === "2022" ? [6, 4] : [],
+        });
+      }
+    });
+  });
+  new Chart(canvas, {
+    type: "scatter",
+    data: { datasets: series },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      color: "#1c1917",
+      plugins: {
+        legend: {
+          position: "bottom",
+          onClick() {},
+          labels: { usePointStyle: true, boxWidth: 8 },
+        },
+        tooltip: {
+          callbacks: {
+            label(contexto) {
+              const ponto = contexto.raw;
+              const linhas = [
+                `${contexto.dataset.label}: ${formatarTaxa(ponto.y)}`,
+                `Média dos rendimentos médios: ${formatarReais(ponto.x)}`,
+              ];
+              if (numeroValido(ponto.mediana)) {
+                linhas.push(`Mediana dos rendimentos médios: ${formatarReais(ponto.mediana)}`);
+              }
+              return linhas;
             },
           },
         },
       },
       scales: {
         x: {
-          stacked: true,
-          title: { display: true, text: tituloEixo },
-          ticks: { padding: 18 },
-        },
-        y: {
-          stacked: true,
-          min: 0,
-          max: absoluto ? undefined : 100,
-          title: {
-            display: true,
-            text: absoluto ? "Eleitores da classe" : "Repartição dos eleitores da classe (%)",
-          },
+          title: { display: true, text: "Média dos rendimentos médios (R$)" },
           ticks: {
             callback(valor) {
-              const texto = Number(valor).toLocaleString("pt-BR");
-              return absoluto ? texto : `${texto}%`;
+              return formatarReais(valor);
+            },
+          },
+        },
+        y: {
+          title: { display: true, text: "Taxa, 2º turno menos 1º turno" },
+          ticks: {
+            callback(valor) {
+              return formatarTaxa(valor);
             },
           },
         },
       },
     },
+    plugins: [{
+      id: "tendencias",
+      afterDatasetsDraw(grafico) {
+        const { ctx, chartArea, scales } = grafico;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+        ctx.clip();
+        linhas.forEach((linha) => {
+          const [inicio, fim] = linha.pontos;
+          ctx.beginPath();
+          ctx.strokeStyle = linha.cor;
+          ctx.lineWidth = 2;
+          ctx.setLineDash(linha.traco);
+          ctx.moveTo(scales.x.getPixelForValue(inicio.x), scales.y.getPixelForValue(inicio.y));
+          ctx.lineTo(scales.x.getPixelForValue(fim.x), scales.y.getPixelForValue(fim.y));
+          ctx.stroke();
+        });
+        ctx.restore();
+      },
+    }],
   });
 }
 
-function desenharComposicao(features) {
-  const grupos = [
-    {
-      ano: "2022",
-      classes: composicaoPorClasse(features, [
-        "votos_lula_2022", "votos_bolsonaro_2022", "votos_invalidos_2022", "votos_totais_2022", "votos_nc_2022",
-      ]),
-    },
-    {
-      ano: "2026",
-      classes: composicaoPorClasse(features, [
-        "votos_lula_2026", "votos_flavio_2026", "votos_invalidos_2026", "votos_totais_2026", "votos_nc_2026",
-      ]),
-    },
-  ];
-  desenharEmpilhado(document.getElementById("grafico-ipvs-forma-empilhada"), grupos, "percentual");
-  desenharEmpilhado(document.getElementById("grafico-ipvs-forma-empilhada-absoluta"), grupos, "absoluto");
-}
-
-function eixoRenda(features) {
-  montarFaixas(features);
-  classificar = (propriedades) => (
-    numeroValido(propriedades.renda_mediana) ? indiceFaixa(Number(propriedades.renda_mediana)) : null
-  );
-  tituloEixo = "Renda mediana do responsável (R$)";
-}
-
-function eixoIpvs() {
-  faixas = [
-    { rotulo: "Baixíssima" },
-    { rotulo: "Muito baixa" },
-    { rotulo: "Baixa" },
-    { rotulo: "Média" },
-    { rotulo: "Alta" },
-    { rotulo: "Muito alta" },
-  ];
-  classificar = (propriedades) => {
-    const valor = Number(propriedades.ipvs);
-    if (valor >= 1 && valor <= 6) return valor - 1;
-    return null;
-  };
-  tituloEixo = "Classe de vulnerabilidade (IPVS)";
-}
-
-function desenharPainel(features, prefixo) {
-  const canvas = (nome) => document.getElementById(`${prefixo}${nome}`);
-    const lula = contar(features, "dif_pct_lula");
-    const bolsonaro = contar(features, "dif_pct_bolsonaro");
-    const invalidos = contar(features, "dif_pct_invalidos");
-    const nc = contar(features, "dif_pct_nc");
-    const maximoCelulas = maximoDe([
-      lula.perdeu, lula.ganhou, bolsonaro.perdeu, bolsonaro.ganhou,
-      invalidos.perdeu, invalidos.ganhou, nc.perdeu, nc.ganhou,
-    ]);
-    desenhar(canvas("lula"), seriesVariacao(lula), maximoCelulas, "Quantidade de células", "células");
-    desenhar(canvas("bolsonaro"), seriesVariacao(bolsonaro), maximoCelulas, "Quantidade de células", "células");
-    desenhar(canvas("invalidos"), seriesVariacao(invalidos), maximoCelulas, "Quantidade de células", "células");
-    desenhar(canvas("nc"), seriesVariacao(nc), maximoCelulas, "Quantidade de células", "células");
-
-    const lulaSaldo = saldoPorFaixa(features, "dif_lula", "votos_lula_2022");
-    const bolsonaroSaldo = saldoPorFaixa(features, "dif_bolsonaro", "votos_bolsonaro_2022");
-    const invalidosSaldo = saldoPorFaixa(features, "dif_invalidos", "votos_invalidos_2022");
-    const ncSaldo = saldoPorFaixa(features, "dif_nc", "votos_nc_2022");
-    const saldos = [lulaSaldo, bolsonaroSaldo, invalidosSaldo, ncSaldo];
-    const eixoVotos = limitesEixo(saldos.map((item) => item.absoluto));
-    const eixoPercentual = limitesEixo(saldos.map((item) => item.percentual));
-    desenharSaldo(canvas("lula-votos"), lulaSaldo, eixoVotos, eixoPercentual);
-    desenharSaldo(canvas("bolsonaro-votos"), bolsonaroSaldo, eixoVotos, eixoPercentual);
-    desenharSaldo(canvas("invalidos-votos"), invalidosSaldo, eixoVotos, eixoPercentual);
-    desenharSaldo(canvas("nc-votos"), ncSaldo, eixoVotos, eixoPercentual);
-
-    const totais = [
-      somarVotos(features, "votos_lula_2022", "pct_lula_2022"),
-      somarVotos(features, "votos_lula_2026", "pct_lula_2026"),
-      somarVotos(features, "votos_bolsonaro_2022", "pct_bolsonaro_2022"),
-      somarVotos(features, "votos_flavio_2026", "pct_flavio_2026"),
-      somarVotos(features, "votos_invalidos_2022", "pct_invalidos_2022"),
-      somarVotos(features, "votos_invalidos_2026", "pct_invalidos_2026"),
-      somarVotos(features, "votos_nc_2022", "pct_nc_2022"),
-      somarVotos(features, "votos_nc_2026", "pct_nc_2026"),
-    ];
-    const maximoTotal = maximoDe(totais);
-    const serieAno = (rotulo, dados, cor) => ({ rotulo, dados, cor });
-    desenhar(canvas("lula-total"), [
-      serieAno("2022", totais[0], COR_2022),
-      serieAno("2026", totais[1], COR_2026),
-    ], maximoTotal, "Votos", "votos");
-    desenhar(canvas("bolsonaro-total"), [
-      serieAno("2022", totais[2], COR_2022),
-      serieAno("2026", totais[3], COR_2026),
-    ], maximoTotal, "Votos", "votos");
-    desenhar(canvas("invalidos-total"), [
-      serieAno("2022", totais[4], COR_2022),
-      serieAno("2026", totais[5], COR_2026),
-    ], maximoTotal, "Votos", "votos");
-    desenhar(canvas("nc-total"), [
-      serieAno("2022", totais[6], COR_2022),
-      serieAno("2026", totais[7], COR_2026),
-    ], maximoTotal, "Votos", "votos");
-
-    const forma = (rotulo, votos, cor, referencia = false) => ({
-      rotulo,
-      dados: parcela(votos),
-      cor,
-      referencia,
+function atualizar() {
+  const ativas = comparacoesMarcadas();
+  const indices = ativas.map((item) => COMPARACOES.indexOf(item));
+  const votos = agregados.map((grupo) => indices.map((indice) => grupo[indice].absoluto));
+  const taxas = agregados.map((grupo) => indices.map((indice) => grupo[indice].taxa));
+  const limiteVotos = limiteDe(votos);
+  const limiteTaxa = limiteDe(taxas);
+  agregados.forEach((grupo, indiceSegmento) => {
+    const segmento = SEGMENTOS[indiceSegmento];
+    const series = ativas.map((comparacao) => {
+      const posicao = COMPARACOES.indexOf(comparacao);
+      return { comparacao, absoluto: grupo[posicao].absoluto, taxa: grupo[posicao].taxa };
     });
-    const forma2026 = [
-      forma("Total de votos", somarVotos(features, "votos_totais_2026", "votos_totais_2026"), COR_TOTAL, true),
-      forma("Lula", totais[1], COR_LULA),
-      forma("Flávio", totais[3], COR_ADVERSARIO),
-      forma("Inválidos", totais[5], COR_INVALIDOS),
-      forma("Não comparecimento", totais[7], COR_NC),
-    ];
-    const forma2022 = [
-      forma("Total de votos", somarVotos(features, "votos_totais_2022", "votos_totais_2022"), COR_TOTAL, true),
-      forma("Lula", totais[0], COR_LULA),
-      forma("Bolsonaro", totais[2], COR_ADVERSARIO),
-      forma("Inválidos", totais[4], COR_INVALIDOS),
-      forma("Não comparecimento", totais[6], COR_NC),
-    ];
-    const maximoForma = maximoDe([...forma2026, ...forma2022].map((serie) => serie.dados));
-    desenharLinha(canvas("forma-2026"), forma2026, maximoForma);
-    desenharLinha(canvas("forma-2022"), forma2022, maximoForma);
+    desenharBarras(
+      document.getElementById(`${segmento.id}-absoluto`),
+      series.map((serie) => ({ comparacao: serie.comparacao, dados: serie.absoluto })),
+      limiteVotos,
+      false,
+    );
+    desenharBarras(
+      document.getElementById(`${segmento.id}-taxa`),
+      series.map((serie) => ({ comparacao: serie.comparacao, dados: serie.taxa })),
+      limiteTaxa,
+      true,
+    );
+  });
+  desenharDispersao();
 }
 
-fetch("dados/grade.geojson?v=21")
+function preparar(features) {
+  celulas = features;
+  agregados = SEGMENTOS.map((segmento) => segmento.pares.map(([campoDif, campoBase]) => agregar(features, campoDif, campoBase)));
+  atualizar();
+}
+
+montarSeletores();
+
+fetch("dados/grade.geojson?v=24")
   .then((resposta) => resposta.json())
-  .then((dados) => {
-    const features = dados.features;
-    eixoRenda(features);
-    desenharPainel(features, "grafico-");
-    eixoIpvs();
-    desenharPainel(features, "grafico-ipvs-");
-    desenharComposicao(features);
-  });
+  .then((dados) => preparar(dados.features));

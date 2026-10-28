@@ -3,135 +3,75 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Renda e variação</title>
+  <title>Vulnerabilidade e variação</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/estilo.css?v=8">
+  <link rel="stylesheet" href="css/estilo.css?v=14">
 </head>
 <body class="grafico">
   <nav class="topo">
-    <h1>Renda e variação de Lula, de Flávio/Bolsonaro, dos inválidos e do não comparecimento</h1>
+    <h1>Variação por vulnerabilidade</h1>
     <div class="atalhos"><a href="index.html">Mapa</a><a href="metodologia.html">Metodologia</a></div>
   </nav>
-  <p class="nota">A renda é a mediana do responsável nos setores de 2026. As faixas são as mesmas quebras naturais da camada Nominal mediano do mapa.</p>
+  <p class="nota">A classe da célula é a mais frequente entre os setores cujo centróide cai nela. As seis classes do IPVS entram da baixíssima à muito alta. Setores não classificados ficam de fora. O acréscimo é a diferença de votos, não a diferença dos percentuais. A taxa divide essa diferença pelos votos do ponto de partida, somados na classe. Cada comparação tem a sua cor: a barra cheia é crescimento e a barra clara é redução. A escala acompanha as comparações marcadas.</p>
+  <div class="seletor" id="seletor-comparacoes"></div>
 
-  <h2>Células em que a comparação caiu ou subiu</h2>
-  <p class="nota">Cada coluna conta células com base nos dois anos. A comparação é a diferença dos percentuais, 2026 menos 2022. Perda é diferença negativa e ganho é diferença positiva. Empate em zero não entra. Os quatro gráficos usam a mesma escala vertical.</p>
-  <h3>Lula</h3>
-  <div class="quadro">
-    <canvas id="grafico-lula"></canvas>
-  </div>
-  <h3>Flávio/Bolsonaro</h3>
-  <div class="quadro">
-    <canvas id="grafico-bolsonaro"></canvas>
-  </div>
-  <h3>Inválidos</h3>
-  <div class="quadro">
-    <canvas id="grafico-invalidos"></canvas>
-  </div>
-  <h3>Não comparecimento</h3>
-  <div class="quadro">
-    <canvas id="grafico-nc"></canvas>
+  <h2>Lula</h2>
+  <div class="par">
+    <div>
+      <h3>Votos</h3>
+      <div class="quadro"><canvas id="lula-absoluto"></canvas></div>
+    </div>
+    <div>
+      <h3>Taxa</h3>
+      <div class="quadro"><canvas id="lula-taxa"></canvas></div>
+    </div>
   </div>
 
-  <h2>Saldo de votos entre 2026 e 2022</h2>
-  <p class="nota">O saldo é 2026 menos 2022, em cada faixa de renda. As colunas são o saldo em votos, no eixo da esquerda. A linha é esse saldo dividido pelos votos de 2022 na faixa, no eixo da direita. Os quatro gráficos usam as mesmas escalas.</p>
-  <h3>Lula</h3>
-  <div class="quadro">
-    <canvas id="grafico-lula-votos"></canvas>
-  </div>
-  <h3>Flávio/Bolsonaro</h3>
-  <div class="quadro">
-    <canvas id="grafico-bolsonaro-votos"></canvas>
-  </div>
-  <h3>Inválidos</h3>
-  <div class="quadro">
-    <canvas id="grafico-invalidos-votos"></canvas>
-  </div>
-  <h3>Não comparecimento</h3>
-  <div class="quadro">
-    <canvas id="grafico-nc-votos"></canvas>
+  <h2>Flávio/Bolsonaro</h2>
+  <div class="par">
+    <div>
+      <h3>Votos</h3>
+      <div class="quadro"><canvas id="adversario-absoluto"></canvas></div>
+    </div>
+    <div>
+      <h3>Taxa</h3>
+      <div class="quadro"><canvas id="adversario-taxa"></canvas></div>
+    </div>
   </div>
 
-  <h2>Votos absolutos em cada faixa de renda</h2>
-  <p class="nota">Cada coluna soma os votos das células da faixa. Em Flávio/Bolsonaro, 2022 é Bolsonaro e 2026 é Flávio. Os quatro gráficos usam a mesma escala vertical.</p>
-  <h3>Lula</h3>
-  <div class="quadro">
-    <canvas id="grafico-lula-total"></canvas>
-  </div>
-  <h3>Flávio/Bolsonaro</h3>
-  <div class="quadro">
-    <canvas id="grafico-bolsonaro-total"></canvas>
-  </div>
-  <h3>Inválidos</h3>
-  <div class="quadro">
-    <canvas id="grafico-invalidos-total"></canvas>
-  </div>
-  <h3>Não comparecimento</h3>
-  <div class="quadro">
-    <canvas id="grafico-nc-total"></canvas>
+  <h2>Inválidos</h2>
+  <div class="par">
+    <div>
+      <h3>Votos</h3>
+      <div class="quadro"><canvas id="invalidos-absoluto"></canvas></div>
+    </div>
+    <div>
+      <h3>Taxa</h3>
+      <div class="quadro"><canvas id="invalidos-taxa"></canvas></div>
+    </div>
   </div>
 
-  <h2>Forma da distribuição por faixa de renda</h2>
-  <p class="nota">Cada linha é a parcela dos votos daquele grupo em cada faixa, e por isso soma 100%. A linha preta é a distribuição de todos os votos. Onde outra linha fica acima dela, o grupo está mais presente nessa faixa do que o conjunto dos votos. O não comparecimento entra na comparação e não compõe o total.</p>
-  <h3>2026</h3>
-  <div class="quadro">
-    <canvas id="grafico-forma-2026"></canvas>
+  <h2>Não comparecimento</h2>
+  <div class="par">
+    <div>
+      <h3>Votos</h3>
+      <div class="quadro"><canvas id="nc-absoluto"></canvas></div>
+    </div>
+    <div>
+      <h3>Taxa</h3>
+      <div class="quadro"><canvas id="nc-taxa"></canvas></div>
+    </div>
   </div>
-  <h3>2022</h3>
-  <div class="quadro">
-    <canvas id="grafico-forma-2022"></canvas>
-  </div>
 
-  <h2>Os mesmos gráficos por classe de vulnerabilidade</h2>
-  <p class="nota">A classe da célula é a mais frequente entre os setores cujo centroide cai nela. As seis classes do IPVS entram separadas, da baixíssima à muito alta. Setores não classificados ficam de fora. As leituras repetem as da renda.</p>
-
-  <h3>Células em que a comparação caiu ou subiu</h3>
-  <h3>Lula</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-lula"></canvas></div>
-  <h3>Flávio/Bolsonaro</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-bolsonaro"></canvas></div>
-  <h3>Inválidos</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-invalidos"></canvas></div>
-  <h3>Não comparecimento</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-nc"></canvas></div>
-
-  <h3>Saldo de votos entre 2026 e 2022</h3>
-  <h3>Lula</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-lula-votos"></canvas></div>
-  <h3>Flávio/Bolsonaro</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-bolsonaro-votos"></canvas></div>
-  <h3>Inválidos</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-invalidos-votos"></canvas></div>
-  <h3>Não comparecimento</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-nc-votos"></canvas></div>
-
-  <h3>Votos absolutos em cada classe</h3>
-  <h3>Lula</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-lula-total"></canvas></div>
-  <h3>Flávio/Bolsonaro</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-bolsonaro-total"></canvas></div>
-  <h3>Inválidos</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-invalidos-total"></canvas></div>
-  <h3>Não comparecimento</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-nc-total"></canvas></div>
-
-  <h3>Forma da distribuição por classe</h3>
-  <h3>2026</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-forma-2026"></canvas></div>
-  <h3>2022</h3>
-  <div class="quadro"><canvas id="grafico-ipvs-forma-2022"></canvas></div>
-
-  <h3>Como cada classe reparte os eleitores</h3>
-  <p class="nota">Em cada classe, a barra da esquerda é 2022 e a da direita é 2026. A barra reparte os eleitores da classe entre Lula, Bolsonaro ou Flávio, os demais candidatos, os inválidos e o não comparecimento. Os números são essa repartição em porcentagem, e cada barra soma 100%.</p>
-  <div class="quadro"><canvas id="grafico-ipvs-forma-empilhada"></canvas></div>
-
-  <h3>A mesma repartição em quantidade</h3>
-  <p class="nota">O empilhamento repete o gráfico de cima. Os números são a quantidade de eleitores em cada parte. As barras de 2022 e de 2026 usam a mesma escala.</p>
-  <div class="quadro"><canvas id="grafico-ipvs-forma-empilhada-absoluta"></canvas></div>
+  <h2>Renda média e crescimento</h2>
+  <p class="nota">Cada ponto é uma célula. O eixo horizontal é a média dos rendimentos médios do responsável nos setores da célula. O vertical é a taxa entre turnos, 2º menos 1º, em 2026 ou em 2022. O miolo translúcido e o contorno opaco têm a cor do segmento. O círculo é 2026 e o triângulo é 2022. A linha é a tendência linear da série: contínua em 2026 e tracejada em 2022. A dica também mostra a mediana desses rendimentos médios.</p>
+  <div class="seletor" id="seletor-segmentos"></div>
+  <div class="seletor" id="seletor-anos"></div>
+  <div class="quadro quadro-largo"><canvas id="correlacao"></canvas></div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
-  <script src="js/grafico.js?v=30"></script>
+  <script src="js/grafico.js?v=47"></script>
 </body>
 </html>
